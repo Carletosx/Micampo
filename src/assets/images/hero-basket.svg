@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <radialGradient id="basketGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" style="stop-color:#f9e3b7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d4a76a;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  <!-- Basket -->
+  <ellipse cx="400" cy="450" rx="200" ry="80" fill="url(#basketGradient)" stroke="#a67c52" stroke-width="5"/>
+  <path d="M200,450 C200,450 200,350 400,300 C600,350 600,450 600,450" fill="none" stroke="#a67c52" stroke-width="5"/>
+  
+  <!-- Vegetables and Fruits -->
+  <!-- Apple -->
+  <circle cx="320" cy="380" r="40" fill="#e74c3c"/>
+  <path d="M320,340 C320,340 330,320 340,330" fill="none" stroke="#2ecc71" stroke-width="3"/>
+  
+  <!-- Carrot -->
+  <path d="M380,360 L400,420" fill="none" stroke="#e67e22" stroke-width="25" stroke-linecap="round"/>
+  <path d="M380,340 C380,340 390,330 400,340 C410,350 390,350 380,340" fill="#2ecc71"/>
+  
+  <!-- Broccoli -->
+  <circle cx="450" cy="370" r="30" fill="#2ecc71"/>
+  <circle cx="430" cy="350" r="15" fill="#27ae60"/>
+  <circle cx="470" cy="350" r="15" fill="#27ae60"/>
+  <rect x="445" y="400" width="10" height="30" fill="#7f8c8d"/>
+  
+  <!-- Tomato -->
+  <circle cx="500" cy="390" r="30" fill="#e74c3c"/>
+  <path d="M500,360 C500,360 510,350 520,355" fill="none" stroke="#2ecc71" stroke-width="3"/>
+  
+  <!-- Lettuce -->
+  <path d="M250,380 C270,350 300,370 290,390 C310,370 340,390 320,410 C350,400 360,430 330,430 C360,450 330,470 310,450 C320,480 280,470 280,450 C260,470 230,450 250,430 C220,430 230,400 260,410 C240,390 270,370 290,390 C270,370 240,360 250,380" fill="#2ecc71"/>
+  
+  <!-- Grapes -->
+  <circle cx="350" cy="420" r="10" fill="#9b59b6"/>
+  <circle cx="360" cy="430" r="10" fill="#9b59b6"/>
+  <circle cx="340" cy="430" r="10" fill="#9b59b6"/>
+  <circle cx="350" cy="440" r="10" fill="#9b59b6"/>
+  <path d="M350,410 C350,410 355,390 360,395" fill="none" stroke="#2ecc71" stroke-width="2"/>
+  
+  <!-- Banana -->
+  <path d="M520,400 C550,380 560,410 530,430" fill="none" stroke="#f1c40f" stroke-width="20" stroke-linecap="round"/>
+</svg>

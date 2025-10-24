@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="apple-gradient-3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e74c3c" />
+      <stop offset="100%" stop-color="#c0392b" />
+    </linearGradient>
+    <linearGradient id="leaf-gradient-3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2ecc71" />
+      <stop offset="100%" stop-color="#27ae60" />
+    </linearGradient>
+    <pattern id="organic-pattern" patternUnits="userSpaceOnUse" width="30" height="30">
+      <circle cx="15" cy="15" r="5" fill="#27ae60" fill-opacity="0.2"/>
+    </pattern>
+  </defs>
+  <circle cx="256" cy="256" r="240" fill="#f9f9f9" />
+  <circle cx="256" cy="256" r="220" fill="url(#organic-pattern)" />
+  <g transform="translate(100, 80) scale(0.65) rotate(-15)">
+    <path d="M256 120c-17 0-33-5-47-15-14-9-24-23-29-39-5-16-5-33 0-49 5-16 15-30 29-39 14-10 30-15 47-15s33 5 47 15c14 9 24 23 29 39 5 16 5 33 0 49-5 16-15 30-29 39-14 10-30 15-47 15z" fill="url(#leaf-gradient-3)" />
+    <path d="M391 210c-8-8-17-14-27-18-10-4-21-6-32-6h-10c-11 0-22 2-32 6-10 4-19 10-27 18-8 8-14 17-18 27-4 10-6 21-6 32v10c0 11 2 22 6 32 4 10 10 19 18 27 8 8 17 14 27 18 10 4 21 6 32 6h10c11 0 22-2 32-6 10-4 19-10 27-18 8-8 14-17 18-27 4-10 6-21 6-32v-10c0-11-2-22-6-32-4-10-10-19-18-27z" fill="url(#apple-gradient-3)" />
+  </g>
+  <text x="256" y="400" font-family="Arial" font-size="24" text-anchor="middle" fill="#333">Certificado Orgánico</text>
+</svg>
