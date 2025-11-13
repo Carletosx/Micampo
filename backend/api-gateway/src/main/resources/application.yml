@@ -1,0 +1,61 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - Authorization
+              - Content-Type
+            allowCredentials: true
+      routes:
+        - id: auth
+          uri: http://localhost:8081
+          predicates:
+            - Path=/auth/**
+        - id: users
+          uri: http://localhost:8082
+          predicates:
+            - Path=/users/**
+        - id: products
+          uri: http://localhost:8083
+          predicates:
+            - Path=/products/**
+        - id: orders
+          uri: http://localhost:8084
+          predicates:
+            - Path=/orders/**
+        - id: payments
+          uri: http://localhost:8085
+          predicates:
+            - Path=/payments/**
+        - id: inventory
+          uri: http://localhost:8086
+          predicates:
+            - Path=/inventory/**
+        - id: notifications
+          uri: http://localhost:8087
+          predicates:
+            - Path=/notifications/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:ZmFrZV9zZWNyZXRfZm9yX2Rldl9vbmx5X2RvX25vdF91c2VfaW5fcHJvZA==}

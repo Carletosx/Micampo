@@ -1,0 +1,18 @@
+CREATE DATABASE IF NOT EXISTS notifications_db CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+USE notifications_db;
+
+CREATE TABLE IF NOT EXISTS notificacion (
+  id CHAR(36) PRIMARY KEY,
+  tipo VARCHAR(32) NOT NULL,
+  destinatario VARCHAR(255) NOT NULL,
+  mensaje TEXT,
+  estado VARCHAR(32) NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS plantilla_notificacion (
+  id CHAR(36) PRIMARY KEY,
+  nombre VARCHAR(128) NOT NULL UNIQUE,
+  tipo VARCHAR(32) NOT NULL,
+  contenido TEXT NOT NULL
+);

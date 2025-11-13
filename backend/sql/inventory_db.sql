@@ -1,0 +1,41 @@
+CREATE DATABASE IF NOT EXISTS inventory_db CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+USE inventory_db;
+
+CREATE TABLE IF NOT EXISTS inventario (
+  id CHAR(36) PRIMARY KEY,
+  producto_id CHAR(36) NOT NULL UNIQUE,
+  stock_actual INT NOT NULL DEFAULT 0,
+  stock_minimo INT NOT NULL DEFAULT 0,
+  stock_reservado INT NOT NULL DEFAULT 0,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS movimiento_inventario (
+  id CHAR(36) PRIMARY KEY,
+  producto_id CHAR(36) NOT NULL,
+  tipo VARCHAR(32) NOT NULL,
+  cantidad INT NOT NULL,
+  referencia VARCHAR(1000),
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_mov_producto (producto_id)
+);
+
+CREATE TABLE IF NOT EXISTS alerta_inventario (
+  id CHAR(36) PRIMARY KEY,
+  producto_id CHAR(36) NOT NULL,
+  nivel VARCHAR(32) NOT NULL,
+  mensaje VARCHAR(1000),
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_alerta_producto (producto_id)
+);
+
+CREATE TABLE IF NOT EXISTS outbox (
+  id CHAR(36) PRIMARY KEY,
+  type VARCHAR(128) NOT NULL,
+  routing_key VARCHAR(256) NOT NULL,
+  payload TEXT NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  publicado TINYINT(1) NOT NULL DEFAULT 0,
+  publicado_en TIMESTAMP NULL
+);

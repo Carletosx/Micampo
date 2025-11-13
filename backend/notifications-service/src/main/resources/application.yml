@@ -1,0 +1,26 @@
+server:
+  port: 8087
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/notifications_db}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  rabbitmq:
+    host: ${RABBIT_HOST:localhost}
+    port: ${RABBIT_PORT:5672}
+    username: ${RABBIT_USER:guest}
+    password: ${RABBIT_PASS:guest}
+
+events:
+  exchange:
+    users: ${USERS_EXCHANGE:users.events}
+    orders: ${ORDERS_EXCHANGE:orders.events}
+    payments: ${PAYMENTS_EXCHANGE:payments.events}
+    inventory: ${INVENTORY_EXCHANGE:inventory.events}

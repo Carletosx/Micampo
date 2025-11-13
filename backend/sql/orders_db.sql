@@ -1,0 +1,46 @@
+CREATE DATABASE IF NOT EXISTS orders_db CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+USE orders_db;
+
+CREATE TABLE IF NOT EXISTS pedido (
+  id CHAR(36) PRIMARY KEY,
+  numero VARCHAR(64) NOT NULL UNIQUE,
+  estado VARCHAR(32) NOT NULL,
+  subtotal DECIMAL(12,2) NOT NULL,
+  costo_envio DECIMAL(12,2) NOT NULL,
+  descuento DECIMAL(12,2) NOT NULL,
+  total DECIMAL(12,2) NOT NULL,
+  metodo_pago VARCHAR(64),
+  metodo_envio VARCHAR(64),
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS item_pedido (
+  id CHAR(36) PRIMARY KEY,
+  pedido_id CHAR(36) NOT NULL,
+  producto_id CHAR(36) NOT NULL,
+  cantidad INT NOT NULL,
+  precio_unitario DECIMAL(12,2) NOT NULL,
+  subtotal DECIMAL(12,2) NOT NULL,
+  CONSTRAINT fk_item_pedido FOREIGN KEY (pedido_id) REFERENCES pedido(id)
+);
+
+CREATE TABLE IF NOT EXISTS historial_estado (
+  id CHAR(36) PRIMARY KEY,
+  pedido_id CHAR(36) NOT NULL,
+  estado VARCHAR(32) NOT NULL,
+  cambiado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_hist_pedido FOREIGN KEY (pedido_id) REFERENCES pedido(id)
+);
+
+CREATE TABLE IF NOT EXISTS outbox (
+  id CHAR(36) PRIMARY KEY,
+  type VARCHAR(128) NOT NULL,
+  routing_key VARCHAR(256) NOT NULL,
+  payload TEXT NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  publicado TINYINT(1) NOT NULL DEFAULT 0,
+  publicado_en TIMESTAMP NULL
+);
+
+CREATE INDEX idx_pedido_estado ON pedido(estado);

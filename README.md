@@ -165,3 +165,80 @@ DevDependencies:
 
 ## Licencia
 Proyecto académico/educativo. No se incluye licencia específica; agrega una si tu caso de uso lo requiere.
+
+## Backend (Microservicios)
+- Lenguaje: `Java 17`, Framework: `Spring Boot 3.x`, ORM: `JPA (Hibernate)`, Base de datos: `MySQL`, Mensajería: `RabbitMQ`, Seguridad: `JWT`.
+- Arquitectura: `Database per Service` + `API Gateway` + `Event-Driven` con Outbox.
+
+### Servicios y Puertos
+- `API Gateway` `8080`
+- `Auth` `8081`
+- `Users` `8082`
+- `Products` `8083`
+- `Orders` `8084`
+- `Payments` `8085`
+- `Inventory` `8086`
+- `Notifications` `8087`
+
+### Prerrequisitos Backend
+- `Java 17` y `Maven 3.9+`
+- `MySQL` y `RabbitMQ` (local o Docker)
+- Opcional: `Docker` para levantar MySQL y RabbitMQ rápidamente
+
+### Inicialización de Bases de Datos
+- Importa los SQL por servicio:
+  - `backend/sql/auth_db.sql`
+  - `backend/sql/users_db.sql`
+  - `backend/sql/products_db.sql`
+  - `backend/sql/orders_db.sql`
+  - `backend/sql/payments_db.sql`
+  - `backend/sql/inventory_db.sql`
+  - `backend/sql/notifications_db.sql`
+
+### Variables de Entorno (ejemplos)
+- Comunes:
+  - `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`
+  - `RABBIT_HOST`, `RABBIT_PORT`, `RABBIT_USER`, `RABBIT_PASS`
+- Auth y Gateway:
+  - `JWT_SECRET` (Base64, longitud ≥256 bits)
+- Exchanges (opcionales para personalizar):
+  - `USERS_EXCHANGE`, `PRODUCTS_EXCHANGE`, `INVENTORY_EXCHANGE`, `ORDERS_EXCHANGE`, `PAYMENTS_EXCHANGE`
+
+### Comandos Útiles
+- Verificar instalación:
+  - `mvn -version`
+  - `java -version`
+- Construir un servicio (ejemplo Auth):
+  - `mvn -f backend/auth-service/pom.xml -DskipTests package`
+- Ejecutar un servicio (ejemplo Auth):
+  - `mvn -f backend/auth-service/pom.xml spring-boot:run`
+- Docker (opcional):
+  - MySQL: `docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=root -p 3306:3306 mysql:8`
+  - RabbitMQ: `docker run -d --name rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3-management`
+
+### Orden de Arranque Sugerido
+- `Auth` → `API Gateway` → `Users` → `Products` → `Inventory` → `Orders` → `Payments` → `Notifications`
+
+### Flujo End-to-End (resumen)
+- Registro/Login en `Auth` → token JWT
+- Crear producto en `Products` → evento `product.created`
+- Inventario inicial en `Inventory` (consume evento) → gestionar stock
+- Crear pedido en `Orders` → `order.created`
+- Confirmar pedido → `order.confirmed`
+- Pagar en `Payments` (Stripe/Yape simulado) → `payment.approved`/`payment.failed`
+- Notificaciones en `Notifications` (consume `order.*`, `payment.*`, `inventory.stock-low`, `user.registered`)
+
+### Colección Postman
+- Ruta: `backend/postman/agromarket.postman_collection.json`
+- Variables: `gateway_url` (por defecto `http://localhost:8080`), `accessToken`, `email`
+- Contiene pruebas para: `Auth`, `Users`, `Products`, `Inventory`, `Orders`, `Payments`, `Notifications`
+
+### Solución de Problemas
+- `JWT_SECRET` débil: usa Base64 ≥256 bits
+- Puertos ocupados: ajusta `server.port` en `application.yml`
+- RabbitMQ no disponible: eventos quedan en `outbox` y se publican al restaurar la conexión
+
+### Seguridad
+- Filtro JWT en Gateway y en Auth (`stateless`)
+- `BCrypt` para contraseñas
+- No incluir claves en el código; usar variables de entorno
