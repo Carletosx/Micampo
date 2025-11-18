@@ -216,8 +216,17 @@ Proyecto académico/educativo. No se incluye licencia específica; agrega una si
   - MySQL: `docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=root -p 3306:3306 mysql:8`
   - RabbitMQ: `docker run -d --name rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3-management`
 
+### Arranque con Docker Compose
+- Requisitos: `.env` en cada microservicio, `Docker Desktop` en ejecución.
+- Arrancar todo:
+  - `docker compose -f backend/docker-compose.yml up -d --build`
+- Orden de inicio controlado en `docker-compose.yml` mediante `depends_on`:
+  - MySQL espera a estado `healthy` por `healthcheck`.
+  - Los microservicios se encadenan con `condition: service_started`.
+  - El `API Gateway` depende de que todos estén iniciados.
+
 ### Orden de Arranque Sugerido
-- `Auth` → `API Gateway` → `Users` → `Products` → `Inventory` → `Orders` → `Payments` → `Notifications`
+- `Auth` → `Users` → `Products` → `Inventory` → `Orders` → `Payments` → `Notifications` → `API Gateway`
 
 ### Flujo End-to-End (resumen)
 - Registro/Login en `Auth` → token JWT

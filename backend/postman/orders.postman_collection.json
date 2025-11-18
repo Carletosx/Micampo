@@ -1,0 +1,18 @@
+{
+  "info": {"name": "Agromarket - Pedidos", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+  "item": [
+    {"name": "Crear Pedido", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/pedidos", "host": ["{{baseUrl}}"], "path": ["pedidos"]}, "body": {"mode": "raw", "raw": "{\n  \"usuarioAuthId\": 2,\n  \"metodoPago\": \"TARJETA\",\n  \"metodoEnvio\": \"DELIVERY\",\n  \"items\": [\n    {\n      \"productoId\": 1,\n      \"nombreProducto\": \"Papa Yungay\",\n      \"cantidad\": 2,\n      \"precioUnitario\": 3.5\n    }\n  ]\n}"}}},
+    {"name": "Obtener Pedido", "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/pedidos/{{pedidoId}}", "host": ["{{baseUrl}}"], "path": ["pedidos", "{{pedidoId}}"]}}},
+    {"name": "Listar Pedidos", "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/pedidos?usuarioAuthId={{usuarioAuthId}}&estado=CONFIRMADO&page=0&size=10", "host": ["{{baseUrl}}"], "path": ["pedidos"], "query": [{"key":"usuarioAuthId","value":"{{usuarioAuthId}}"},{"key":"estado","value":"CONFIRMADO"},{"key":"page","value":"0"},{"key":"size","value":"10"}]}}},
+    {"name": "Cambiar Estado", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/pedidos/{{pedidoId}}/estado", "host": ["{{baseUrl}}"], "path": ["pedidos", "{{pedidoId}}", "estado"]}, "body": {"mode": "raw", "raw": "{\n  \"estado\": \"CONFIRMADO\"\n}"}}},
+    {"name": "Ver Totales", "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/pedidos/{{pedidoId}}/totales", "host": ["{{baseUrl}}"], "path": ["pedidos", "{{pedidoId}}", "totales"]}}},
+    {"name": "Agregar Item", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/pedidos/{{pedidoId}}/items", "host": ["{{baseUrl}}"], "path": ["pedidos", "{{pedidoId}}", "items"]}, "body": {"mode": "raw", "raw": "{\n  \"productoId\": 1,\n  \"nombreProducto\": \"Papa Yungay\",\n  \"cantidad\": 1,\n  \"precioUnitario\": 3.5\n}"}}},
+    {"name": "Eliminar Item", "request": {"method": "DELETE", "url": {"raw": "{{baseUrl}}/pedidos/{{pedidoId}}/items/{{itemId}}", "host": ["{{baseUrl}}"], "path": ["pedidos", "{{pedidoId}}", "items", "{{itemId}}"]}}}
+  ],
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8084"},
+    {"key": "pedidoId", "value": "1"},
+    {"key": "usuarioAuthId", "value": "2"},
+    {"key": "itemId", "value": "1"}
+  ]
+}

@@ -1,0 +1,17 @@
+USE auth_db;
+
+CREATE TABLE IF NOT EXISTS usuarios (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  correo VARCHAR(255) NOT NULL UNIQUE,
+  contrasenia VARCHAR(255) NOT NULL,
+  rol VARCHAR(50) NOT NULL,
+  activo TINYINT(1) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS tokens_refresco (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  usuario_id BIGINT NOT NULL,
+  token VARCHAR(255) NOT NULL UNIQUE,
+  expira_en DATETIME(6) NOT NULL,
+  CONSTRAINT fk_tokens_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);

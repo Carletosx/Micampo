@@ -1,0 +1,20 @@
+{
+  "info": {"name": "Agromarket - Inventario", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+  "item": [
+    {"name": "Obtener Inventario", "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/inventario/{{productoId}}", "host": ["{{baseUrl}}"], "path": ["inventario", "{{productoId}}"]}}},
+    {"name": "Actualizar Inventario", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/inventario/{{productoId}}", "host": ["{{baseUrl}}"], "path": ["inventario", "{{productoId}}"]}, "body": {"mode": "raw", "raw": "{\n  \"stockMinimo\": 10\n}"}}},
+    {"name": "Listar Movimientos", "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/inventario/{{productoId}}/movimientos", "host": ["{{baseUrl}}"], "path": ["inventario", "{{productoId}}", "movimientos"]}}},
+    {"name": "Crear Movimiento ENTRADA", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/inventario/{{productoId}}/movimientos", "host": ["{{baseUrl}}"], "path": ["inventario", "{{productoId}}", "movimientos"]}, "body": {"mode": "raw", "raw": "{\n  \"tipo\": \"ENTRADA\",\n  \"cantidad\": 5\n}"}}},
+    {"name": "Reservar", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/inventario/{{productoId}}/reservas", "host": ["{{baseUrl}}"], "path": ["inventario", "{{productoId}}", "reservas"]}, "body": {"mode": "raw", "raw": "{\n  \"cantidad\": 2\n}"}}},
+    {"name": "Liberar", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/inventario/{{productoId}}/liberaciones", "host": ["{{baseUrl}}"], "path": ["inventario", "{{productoId}}", "liberaciones"]}, "body": {"mode": "raw", "raw": "{\n  \"cantidad\": 1\n}"}}},
+    {"name": "Confirmar", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/inventario/{{productoId}}/confirmaciones", "host": ["{{baseUrl}}"], "path": ["inventario", "{{productoId}}", "confirmaciones"]}, "body": {"mode": "raw", "raw": "{\n  \"cantidad\": 1\n}"}}},
+    {"name": "Listar Alertas", "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/inventario/{{productoId}}/alertas", "host": ["{{baseUrl}}"], "path": ["inventario", "{{productoId}}", "alertas"]}}},
+    {"name": "Atender Alerta", "request": {"method": "POST", "url": {"raw": "{{baseUrl}}/inventario/{{productoId}}/alertas/{{alertaId}}/atender", "host": ["{{baseUrl}}"], "path": ["inventario", "{{productoId}}", "alertas", "{{alertaId}}", "atender"]}}}
+  ],
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8086"},
+    {"key": "productoId", "value": "1"},
+    {"key": "alertaId", "value": "1"}
+  ]
+}
+

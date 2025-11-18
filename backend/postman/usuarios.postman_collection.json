@@ -1,0 +1,94 @@
+{
+  "info": {
+    "name": "Agromarket - Usuarios",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Obtener Agricultor",
+      "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/agricultores/1", "host": ["{{baseUrl}}"], "path": ["agricultores", "1"]}}
+    },
+    {
+      "name": "Obtener Agricultor por Auth",
+      "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/agricultores/by-auth/1", "host": ["{{baseUrl}}"], "path": ["agricultores", "by-auth", "1"]}}
+    },
+    {
+      "name": "Actualizar Agricultor",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{baseUrl}}/agricultores/1", "host": ["{{baseUrl}}"], "path": ["agricultores", "1"]},
+        "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"Agricultor Demo\",\n  \"telefono\": \"900000000\"\n}"}
+      }
+    },
+    {
+      "name": "Obtener Finca",
+      "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/agricultores/1/finca", "host": ["{{baseUrl}}"], "path": ["agricultores", "1", "finca"]}}
+    },
+    {
+      "name": "Actualizar Finca",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{baseUrl}}/agricultores/1/finca", "host": ["{{baseUrl}}"], "path": ["agricultores", "1", "finca"]},
+        "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"Finca Demo\",\n  \"ubicacion\": \"Huancayo\",\n  \"descripcion\": \"Finca de prueba\"\n}"}
+      }
+    },
+    {
+      "name": "Obtener Comprador",
+      "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/compradores/1", "host": ["{{baseUrl}}"], "path": ["compradores", "1"]}}
+    },
+    {
+      "name": "Obtener Comprador por Auth",
+      "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/compradores/by-auth/1", "host": ["{{baseUrl}}"], "path": ["compradores", "by-auth", "1"]}}
+    },
+    {
+      "name": "Actualizar Comprador",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{baseUrl}}/compradores/1", "host": ["{{baseUrl}}"], "path": ["compradores", "1"]},
+        "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"Comprador Demo\",\n  \"telefono\": \"955555555\",\n  \"tipo\": \"MINORISTA\"\n}"}
+      }
+    },
+    {
+      "name": "Listar Direcciones",
+      "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/usuarios/1/direcciones", "host": ["{{baseUrl}}"], "path": ["usuarios", "1", "direcciones"]}}
+    },
+    {
+      "name": "Crear Dirección",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{baseUrl}}/usuarios/1/direcciones", "host": ["{{baseUrl}}"], "path": ["usuarios", "1", "direcciones"]},
+        "body": {"mode": "raw", "raw": "{\n  \"tipo\": \"CASA\",\n  \"linea1\": \"Av. Demo 123\",\n  \"distrito\": \"Miraflores\",\n  \"provincia\": \"Lima\",\n  \"departamento\": \"Lima\"\n}"}
+      }
+    },
+    {
+      "name": "Crear Dirección (por authUsuarioId)",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{baseUrl}}/usuarios/{{authUsuarioId}}/direcciones", "host": ["{{baseUrl}}"], "path": ["usuarios", "{{authUsuarioId}}", "direcciones"]},
+        "body": {"mode": "raw", "raw": "{\n  \"tipo\": \"CASA\",\n  \"linea1\": \"Av. Demo 123\",\n  \"distrito\": \"Miraflores\",\n  \"provincia\": \"Lima\",\n  \"departamento\": \"Lima\"\n}"}
+      }
+    },
+    {
+      "name": "Actualizar Dirección",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{baseUrl}}/usuarios/1/direcciones/1", "host": ["{{baseUrl}}"], "path": ["usuarios", "1", "direcciones", "1"]},
+        "body": {"mode": "raw", "raw": "{\n  \"tipo\": \"OFICINA\",\n  \"linea1\": \"Calle Actualizada 456\"\n}"}
+      }
+    },
+    {
+      "name": "Eliminar Dirección",
+      "request": {"method": "DELETE", "url": {"raw": "{{baseUrl}}/usuarios/1/direcciones/1", "host": ["{{baseUrl}}"], "path": ["usuarios", "1", "direcciones", "1"]}}
+    }
+  ],
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8082"},
+    {"key": "authUsuarioId", "value": ""}
+  ]
+}

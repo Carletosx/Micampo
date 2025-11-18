@@ -1,0 +1,20 @@
+{
+  "info": {"name": "Agromarket - Pagos", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+  "item": [
+    {"name": "Crear Pago SIM", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/pagos", "host": ["{{baseUrl}}"], "path": ["pagos"]}, "body": {"mode": "raw", "raw": "{\n  \"pedidoId\": {{pedidoId}},\n  \"monto\": 7.0,\n  \"moneda\": \"PEN\",\n  \"tipo\": \"TARJETA\",\n  \"pasarela\": \"SIM\"\n}"}}},
+    {"name": "Obtener Pago", "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/pagos/{{pagoId}}", "host": ["{{baseUrl}}"], "path": ["pagos", "{{pagoId}}"]}}},
+    {"name": "Confirmar Pago (SIM)", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/pagos/{{pagoId}}/confirmar", "host": ["{{baseUrl}}"], "path": ["pagos", "{{pagoId}}", "confirmar"]}, "body": {"mode": "raw", "raw": "{\n  \"aprobar\": true\n}"}}},
+    {"name": "Reembolsar Pago", "request": {"method": "POST", "url": {"raw": "{{baseUrl}}/pagos/{{pagoId}}/reembolsar", "host": ["{{baseUrl}}"], "path": ["pagos", "{{pagoId}}", "reembolsar"]}}},
+    {"name": "Listar Métodos Guardados", "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/pagos/metodos-pago?usuarioAuthId={{usuarioAuthId}}", "host": ["{{baseUrl}}"], "path": ["pagos", "metodos-pago"], "query": [{"key":"usuarioAuthId","value":"{{usuarioAuthId}}"}]}}},
+    {"name": "Crear Método Guardado", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/pagos/metodos-pago", "host": ["{{baseUrl}}"], "path": ["pagos", "metodos-pago"]}, "body": {"mode": "raw", "raw": "{\n  \"usuarioAuthId\": {{usuarioAuthId}},\n  \"token\": \"tok_demo\",\n  \"last4\": \"4242\",\n  \"marca\": \"VISA\",\n  \"expMonth\": 12,\n  \"expYear\": 2030\n}"}}},
+    {"name": "Eliminar Método Guardado", "request": {"method": "DELETE", "url": {"raw": "{{baseUrl}}/pagos/metodos-pago/{{metodoId}}", "host": ["{{baseUrl}}"], "path": ["pagos", "metodos-pago", "{{metodoId}}"]}}}
+  ],
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8085"},
+    {"key": "pedidoId", "value": "1"},
+    {"key": "pagoId", "value": "1"},
+    {"key": "usuarioAuthId", "value": "2"},
+    {"key": "metodoId", "value": "1"}
+  ]
+}
+

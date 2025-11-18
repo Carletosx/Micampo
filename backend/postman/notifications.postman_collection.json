@@ -1,0 +1,13 @@
+{
+  "info": {"name": "Agromarket - Notificaciones", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+  "item": [
+    {"name": "Enviar Email", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/notificaciones/email", "host": ["{{baseUrl}}"], "path": ["notificaciones", "email"]}, "body": {"mode": "raw", "raw": "{\n  \"destinatario\": \"demo@agro.pe\",\n  \"asunto\": \"Nuevo pedido\",\n  \"contenido\": \"Se ha creado un pedido\"\n}"}}},
+    {"name": "Enviar SMS", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/notificaciones/sms", "host": ["{{baseUrl}}"], "path": ["notificaciones", "sms"]}, "body": {"mode": "raw", "raw": "{\n  \"destinatario\": \"900000000\",\n  \"contenido\": \"Pago aprobado\"\n}"}}},
+    {"name": "Enviar InApp", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/notificaciones/inapp", "host": ["{{baseUrl}}"], "path": ["notificaciones", "inapp"]}, "body": {"mode": "raw", "raw": "{\n  \"destinatario\": \"usuario:2\",\n  \"contenido\": \"Estado de pedido actualizado\"\n}"}}},
+    {"name": "Listar Notificaciones", "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/notificaciones?destinatario=usuario:2", "host": ["{{baseUrl}}"], "path": ["notificaciones"], "query": [{"key":"destinatario","value":"usuario:2"}]}}}
+  ],
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8087"}
+  ]
+}
+

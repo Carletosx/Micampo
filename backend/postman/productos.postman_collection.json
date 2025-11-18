@@ -1,0 +1,90 @@
+{
+  "info": {
+    "name": "Agromarket - Productos",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Listar Productos (filtros)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/productos?q={{q}}&categoria={{categoria}}&minPrecio={{minPrecio}}&maxPrecio={{maxPrecio}}&page={{page}}&size={{size}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["productos"],
+          "query": [
+            {"key":"q","value":"{{q}}"},
+            {"key":"categoria","value":"{{categoria}}"},
+            {"key":"minPrecio","value":"{{minPrecio}}"},
+            {"key":"maxPrecio","value":"{{maxPrecio}}"},
+            {"key":"page","value":"{{page}}"},
+            {"key":"size","value":"{{size}}"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "Crear Producto",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{baseUrl}}/productos", "host": ["{{baseUrl}}"], "path": ["productos"]},
+        "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"Papa Yungay\",\n  \"descripcion\": \"Papa de buena calidad\",\n  \"precio\": 3.50,\n  \"stock\": 100,\n  \"categoria\": \"{{categoria}}\",\n  \"imagenUrl\": \"https://ejemplo.com/papa.jpg\"\n}"}
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var json = {};",
+              "try { json = pm.response.json(); } catch(e) {}",
+              "if (json && json.id) { pm.collectionVariables.set('productId', json.id); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Obtener Producto",
+      "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/productos/{{productId}}", "host": ["{{baseUrl}}"], "path": ["productos", "{{productId}}"]}}
+    },
+    {
+      "name": "Actualizar Producto",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{baseUrl}}/productos/{{productId}}", "host": ["{{baseUrl}}"], "path": ["productos", "{{productId}}"]},
+        "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"Papa Mejorada\",\n  \"descripcion\": \"Actualizada\",\n  \"precio\": 3.80,\n  \"stock\": 120,\n  \"categoria\": \"{{categoria}}\",\n  \"imagenUrl\": \"https://ejemplo.com/papa2.jpg\"\n}"}
+      }
+    },
+    {
+      "name": "Eliminar Producto",
+      "request": {"method": "DELETE", "url": {"raw": "{{baseUrl}}/productos/{{productId}}", "host": ["{{baseUrl}}"], "path": ["productos", "{{productId}}"]}}
+    },
+    {
+      "name": "Listar Reseñas",
+      "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/productos/{{productId}}/resenas", "host": ["{{baseUrl}}"], "path": ["productos", "{{productId}}", "resenas"]}}
+    },
+    {
+      "name": "Crear Reseña",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{baseUrl}}/productos/{{productId}}/resenas", "host": ["{{baseUrl}}"], "path": ["productos", "{{productId}}", "resenas"]},
+        "body": {"mode": "raw", "raw": "{\n  \"calificacion\": 5,\n  \"comentario\": \"Excelente calidad\",\n  \"autorAuthId\": {{autorAuthId}}\n}"}
+      }
+    }
+  ],
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8083"},
+    {"key": "productId", "value": ""},
+    {"key": "autorAuthId", "value": "1"},
+    {"key": "categoria", "value": "VERDURAS"},
+    {"key": "q", "value": ""},
+    {"key": "minPrecio", "value": ""},
+    {"key": "maxPrecio", "value": ""},
+    {"key": "page", "value": "0"},
+    {"key": "size", "value": "10"}
+  ]
+}

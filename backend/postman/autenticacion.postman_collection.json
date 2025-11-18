@@ -1,0 +1,48 @@
+{
+  "info": {
+    "name": "Agromarket - Autenticación",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Registro",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{baseUrl}}/autenticacion/registro", "host": ["{{baseUrl}}"], "path": ["autenticacion", "registro"]},
+        "body": {"mode": "raw", "raw": "{\n  \"correo\": \"test@agro.pe\",\n  \"contrasenia\": \"123456\",\n  \"rol\": \"AGRICULTOR\"\n}"}
+      }
+    },
+    {
+      "name": "Ingreso",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{baseUrl}}/autenticacion/ingreso", "host": ["{{baseUrl}}"], "path": ["autenticacion", "ingreso"]},
+        "body": {"mode": "raw", "raw": "{\n  \"correo\": \"test@agro.pe\",\n  \"contrasenia\": \"123456\"\n}"}
+      }
+    },
+    {
+      "name": "Refrescar",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{baseUrl}}/autenticacion/refrescar", "host": ["{{baseUrl}}"], "path": ["autenticacion", "refrescar"]},
+        "body": {"mode": "raw", "raw": "{\n  \"tokenRefresco\": \"{{refreshToken}}\"\n}"}
+      }
+    },
+    {
+      "name": "Validar",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}],
+        "url": {"raw": "{{baseUrl}}/autenticacion/validar", "host": ["{{baseUrl}}"], "path": ["autenticacion", "validar"]}
+      }
+    }
+  ],
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8081"},
+    {"key": "accessToken", "value": ""},
+    {"key": "refreshToken", "value": ""}
+  ]
+}
