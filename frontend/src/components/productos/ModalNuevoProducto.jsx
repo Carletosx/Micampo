@@ -13,6 +13,7 @@ export default function ModalNuevoProducto({ isOpen, producto, onClose, onSave }
     imagen: '',
   });
   const [errors, setErrors] = useState({});
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (producto) {
@@ -170,13 +171,15 @@ export default function ModalNuevoProducto({ isOpen, producto, onClose, onSave }
           </div>
 
           <div className="md:col-span-2">
-            <label className="text-sm text-gray-600">URL de imagen (opcional)</label>
-            <input
-              className="w-full border border-gray-200 rounded-md px-3 py-2"
-              value={form.imagen}
-              onChange={(e) => setField('imagen', e.target.value)}
-              placeholder="https://..."
-            />
+            <label className="text-sm text-gray-600">Imagen del producto</label>
+            <input type="file" accept="image/*" className="w-full" onChange={handleImageChange} />
+            {uploading && <p className="text-xs text-gray-500 mt-1">Subiendo imagen...</p>}
+            {form.imagen && (
+              <div className="mt-2">
+                <img src={form.imagen} alt="preview" className="h-24 rounded border" />
+              </div>
+            )}
+            {errors.imagen && <p className="text-red-600 text-xs mt-1">{errors.imagen}</p>}
           </div>
         </div>
 
@@ -198,3 +201,23 @@ export default function ModalNuevoProducto({ isOpen, producto, onClose, onSave }
     </div>
   );
 }
+  const handleImageChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/files/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (res.ok && data?.url) {
+        setField('imagen', data.url);
+      } else {
+        setErrors((prev) => ({ ...prev, imagen: 'No se pudo subir la imagen' }));
+      }
+    } catch {
+      setErrors((prev) => ({ ...prev, imagen: 'Error al subir la imagen' }));
+    } finally {
+      setUploading(false);
+    }
+  };
