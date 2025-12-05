@@ -1,0 +1,79 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      httpclient:
+        connect-timeout: 2000
+        response-timeout: 5s
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - http://localhost:5173
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      routes:
+        - id: auth
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=2
+        - id: users
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - StripPrefix=2
+        - id: products
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/products/**
+          filters:
+            - StripPrefix=2
+        - id: orders
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=2
+        - id: payments
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - StripPrefix=2
+        - id: inventory
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/inventory/**
+          filters:
+            - StripPrefix=2
+        - id: notifications
+          uri: http://localhost:8087
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - StripPrefix=2
+  webflux:
+    cors:
+      enabled: true
+
+cors:
+  allowed-origins: "*"
+  allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
+  allowed-headers: "*"
+
+jwt:
+  secreto: ${JWT_SECRET:ZGV2LXNlY3JldC1rZXktMTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}

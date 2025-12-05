@@ -1,0 +1,93 @@
+import React from 'react';
+
+function Badge({ children, color = 'bg-gray-100 text-gray-700' }) {
+  return (
+    <span className={`text-xs font-medium px-2 py-1 rounded ${color}`}>{children}</span>
+  );
+}
+
+export default function TarjetaProducto({ producto, onEditar, onPausar, onEliminar }) {
+  const {
+    nombre,
+    categoria,
+    estado = 'activo',
+    descripcion,
+    precio = 0,
+    unidad = 'kg',
+    stock = 0,
+    stockMin = 0,
+    imagen,
+  } = producto;
+
+  const activo = estado === 'activo';
+  const stockBajo = stock <= stockMin && stockMin > 0;
+
+  const formatoPrecio = (v) => `S/ ${Number(v).toFixed(2)}/${unidad}`;
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition overflow-hidden">
+      <div className="relative h-32 bg-gradient-to-br from-green-600 to-green-400 flex items-center justify-center">
+        {imagen ? (
+          <img src={imagen} alt={nombre} className="h-20 w-20 object-contain" />
+        ) : (
+          <div className="h-20 w-20 rounded-full bg-green-300/50" />
+        )}
+        <div className="absolute top-2 left-2">
+          <Badge color="bg-white/90 text-gray-700 border border-gray-200">Stock: {stock} {unidad}</Badge>
+        </div>
+        <div className="absolute top-2 right-2 flex items-center gap-2">
+          <Badge color={activo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
+            {activo ? 'Activo' : 'Inactivo'}
+          </Badge>
+          {stockBajo && (
+            <Badge color="bg-yellow-100 text-yellow-700">Stock Bajo</Badge>
+          )}
+        </div>
+      </div>
+
+      <div className="p-4">
+        <div className="text-xs font-semibold text-green-700">{categoria?.toUpperCase()}</div>
+        <h3 className="text-lg font-bold text-gray-800">{nombre}</h3>
+        {descripcion && (
+          <p className="text-sm text-gray-600 line-clamp-2">{descripcion}</p>
+        )}
+
+        <div className="mt-3 flex items-end justify-between">
+          <div>
+            <div className="text-green-700 font-bold text-xl">{formatoPrecio(precio)}</div>
+            <div className="text-xs text-gray-500">{stock} {unidad} disponibles</div>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <button
+            onClick={() => onEditar?.(producto)}
+            className="text-sm bg-green-100 hover:bg-green-200 text-green-700 font-medium px-3 py-2 rounded"
+          >
+            ✏️ Editar
+          </button>
+
+          {activo ? (
+            <button
+              onClick={() => onPausar?.(producto)}
+              className="text-sm bg-orange-100 hover:bg-orange-200 text-orange-700 font-medium px-3 py-2 rounded"
+            >
+              ⏸️ Pausar
+            </button>
+          ) : (
+            <div className="text-sm bg-gray-100 text-gray-500 font-medium px-3 py-2 rounded text-center select-none">
+              Pausado
+            </div>
+          )}
+
+          <button
+            onClick={() => onEliminar?.(producto)}
+            className="text-sm bg-red-100 hover:bg-red-200 text-red-700 font-medium px-3 py-2 rounded"
+          >
+            🗑️ Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -15,10 +15,10 @@ public class ServicioJwt {
   @Value("${jwt.secreto}")
   private String secreto;
 
-  public String generarAccessToken(String sujeto, String rol, long minutos) {
+  public String generarAccessToken(String sujeto, String rol, Long usuarioId, String nombre, long minutos) {
     Date ahora = new Date();
     Date exp = new Date(ahora.getTime() + minutos * 60_000);
-    return Jwts.builder().setSubject(sujeto).claim("rol", rol).setIssuedAt(ahora).setExpiration(exp).signWith(llave(), SignatureAlgorithm.HS256).compact();
+    return Jwts.builder().setSubject(sujeto).claim("rol", rol).claim("usuarioId", usuarioId).claim("nombre", nombre).setIssuedAt(ahora).setExpiration(exp).signWith(llave(), SignatureAlgorithm.HS256).compact();
   }
 
   public String generarRefreshToken(String sujeto, long dias) {

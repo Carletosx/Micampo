@@ -17,9 +17,13 @@ public class Usuario {
   @Column(nullable = false, unique = true)
   private String correo;
   @Column(nullable = false)
+  private String nombre;
+  @Column(nullable = false)
   private String contrasenia;
   @Column(nullable = false)
   private String rol;
   @Column(nullable = false)
   private boolean activo;
+  @Column(name = "avatar_url")
+  private String avatarUrl;
 }

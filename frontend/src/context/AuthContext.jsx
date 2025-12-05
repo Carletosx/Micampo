@@ -1,0 +1,208 @@
+import React, { createContext, useState, useContext } from 'react';
+
+export const AuthContext = createContext();
+
+export const useAuth = () => useContext(AuthContext);
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) ? import.meta.env.VITE_API_BASE : '/api';
+  const AUTH_DIRECT_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_AUTH_DIRECT_BASE) ? import.meta.env.VITE_AUTH_DIRECT_BASE : 'http://localhost:8081';
+
+  const requestWithTimeout = async (url, options = {}, timeoutMs = 10000) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const resp = await fetch(url, { ...options, signal: controller.signal });
+      let data = null;
+      try {
+        data = await resp.json();
+      } catch {
+        try {
+          const text = await resp.text();
+          data = text ? { mensaje: text } : null;
+        } catch {
+          data = null;
+        }
+      }
+      return { resp, data };
+    } finally {
+      clearTimeout(id);
+    }
+  };
+
+  const requestWithTimeoutRetry = async (url, options = {}, timeoutMs = 2500, retries = 0) => {
+    try {
+      return await requestWithTimeout(url, options, timeoutMs);
+    } catch (err) {
+      if (retries > 0 && (err?.name === 'AbortError' || err instanceof TypeError)) {
+        return await requestWithTimeoutRetry(url, options, timeoutMs, retries - 1);
+      }
+      throw err;
+    }
+  };
+
+  const postJsonWithFallback = async (relativePathAfterAuth, body, timeoutMs = 2500) => {
+    const primaryUrl = `${API_BASE}/auth/${relativePathAfterAuth}`;
+    const options = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(body)
+    };
+    try {
+      const r1 = await requestWithTimeoutRetry(primaryUrl, options, timeoutMs, 0);
+      return r1;
+    } catch (e) {
+      if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV) {
+        const fallbackUrl = `${AUTH_DIRECT_BASE}/${relativePathAfterAuth}`;
+        const r2 = await requestWithTimeoutRetry(fallbackUrl, options, timeoutMs, 0);
+        return r2;
+      }
+      throw e;
+    }
+  };
+
+  const formatError = (data, fallback = 'Error') => {
+    const raw = data?.mensaje || data?.message || data?.error || fallback;
+    const detalles = data?.detalles ? `: ${data.detalles}` : '';
+    if (raw === 'Correo ya registrado') return 'El correo ya está registrado';
+    if (raw === 'Datos inválidos') return `Datos inválidos${detalles}`.trim();
+    if (raw === 'Credenciales inválidas') return 'Credenciales inválidas';
+    if (typeof raw === 'string') return raw;
+    return fallback;
+  };
+
+  const login = async (email, password) => {
+    setLoading(true);
+    try {
+      const payload = { correo: email, contrasenia: password };
+      console.log('POST /api/auth/autenticacion/ingreso payload:', payload);
+      const t0 = performance.now();
+      const { resp, data } = await postJsonWithFallback('autenticacion/ingreso', payload, 2500);
+      const t1 = performance.now();
+      console.log('Respuesta /ingreso status:', resp.status);
+      console.log('Tiempo /ingreso ms:', Math.round(t1 - t0));
+      console.log('Respuesta /ingreso body:', data);
+      if (!resp.ok) {
+        const msg = formatError(data, 'Error de inicio de sesión');
+        throw new Error(msg);
+      }
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      try {
+        const payload = JSON.parse(atob(data.accessToken.split('.') [1]));
+        const displayName = payload?.nombre || (payload?.sub || email || '').split('@')[0];
+        const usuario = { email: payload?.sub || email, role: payload?.rol, id: payload?.usuarioId, displayName };
+        setUser(usuario);
+        localStorage.setItem('user', JSON.stringify(usuario));
+      } catch {
+        const displayName = (email || '').split('@')[0];
+        const usuario = { email, role: 'DESCONOCIDO', displayName };
+        setUser(usuario);
+        localStorage.setItem('user', JSON.stringify(usuario));
+      }
+      setIsAuthenticated(true);
+      return { success: true };
+    } catch (error) {
+      console.log('Error /ingreso:', error);
+      const emsg = error?.message || '';
+      const timeout = error?.name === 'AbortError' || /aborted|timed out|Failed to fetch/i.test(emsg);
+      return { success: false, error: timeout ? 'Tiempo de espera agotado' : emsg };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const register = async (userData) => {
+    setLoading(true);
+    try {
+      const rol = (userData.tipoUsuario || 'comprador').toLowerCase() === 'vendedor' ? 'AGRICULTOR' : 'COMPRADOR';
+      const payload = { nombre: userData.nombre, correo: userData.email, contrasenia: userData.password, rol };
+      console.log('POST /api/auth/autenticacion/registro payload:', payload);
+      const t0 = performance.now();
+      const { resp, data } = await postJsonWithFallback('autenticacion/registro', payload, 2500);
+      const t1 = performance.now();
+      console.log('Respuesta /registro status:', resp.status);
+      console.log('Tiempo /registro ms:', Math.round(t1 - t0));
+      console.log('Respuesta /registro body:', data);
+      if (!resp.ok) {
+        const msg = formatError(data, 'Error de registro');
+        throw new Error(msg);
+      }
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      try {
+        const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+        const displayName = payload?.nombre || userData?.nombre || (payload?.sub || userData.email || '').split('@')[0];
+        const nuevoUsuario = { email: payload?.sub || userData.email, role: payload?.rol, id: payload?.usuarioId, displayName };
+        setUser(nuevoUsuario);
+        localStorage.setItem('user', JSON.stringify(nuevoUsuario));
+      } catch {
+        const displayName = userData?.nombre || (userData.email || '').split('@')[0];
+        const nuevoUsuario = { email: userData.email, role: rol, displayName };
+        setUser(nuevoUsuario);
+        localStorage.setItem('user', JSON.stringify(nuevoUsuario));
+      }
+      setIsAuthenticated(true);
+      return { success: true };
+    } catch (error) {
+      console.log('Error /registro:', error);
+      const emsg = error?.message || '';
+      const timeout = error?.name === 'AbortError' || /aborted|timed out|Failed to fetch/i.test(emsg);
+      return { success: false, error: timeout ? 'Tiempo de espera agotado' : emsg };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem('user');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+  };
+
+  // Verificar si hay un usuario en localStorage al cargar
+  React.useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+      setIsAuthenticated(true);
+    }
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      requestWithTimeoutRetry(`${API_BASE}/auth/autenticacion/validar`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+      }, 2000, 0).then(({ resp }) => {
+        if (!resp.ok) {
+          setUser(null);
+          setIsAuthenticated(false);
+          localStorage.removeItem('user');
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+        }
+      }).catch(() => {
+        setUser(null);
+        setIsAuthenticated(false);
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+      });
+    }
+  }, []);
+
+  const value = {
+    user,
+    isAuthenticated,
+    loading,
+    login,
+    register,
+    logout
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};

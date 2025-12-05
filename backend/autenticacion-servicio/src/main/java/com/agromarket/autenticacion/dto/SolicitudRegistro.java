@@ -10,6 +10,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SolicitudRegistro {
+  @NotBlank
+  @Size(min = 2, max = 80)
+  private String nombre;
   @Email
   @NotBlank
   private String correo;
@@ -17,6 +20,6 @@ public class SolicitudRegistro {
   @Size(min = 6, max = 64)
   private String contrasenia;
   @NotBlank
-  @Pattern(regexp = "^(AGRICULTOR|COMPRADOR)$")
+  @Pattern(regexp = "^(AGRICULTOR|COMPRADOR|ADMIN)$")
   private String rol;
 }
