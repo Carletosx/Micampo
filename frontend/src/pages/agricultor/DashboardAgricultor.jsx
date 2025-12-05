@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { FaBell } from 'react-icons/fa';
+import { AuthContext } from '../../context/AuthContext';
 
 import NavbarAgricultor from '../../components/layout/NavbarAgricultor';
 import BannerBienvenida from '../../components/dashboard/BannerBienvenida';
@@ -11,12 +12,12 @@ import PedidosRecientes from '../../components/dashboard/PedidosRecientes';
 import ProductosMasVendidos from '../../components/dashboard/ProductosMasVendidos';
 
 const DashboardAgricultor = () => {
-  const nombreAgricultor = 'Juan';
-  const nombrePerfil = 'Juan Pérez - Agricultor';
+  const { user } = useContext(AuthContext);
+  const nombreAgricultor = (user?.displayName || (user?.email || '').split('@')[0] || '').split(' ')[0];
 
   return (
     <>
-      <NavbarAgricultor nombre={"Juan Pérez"} rol={"Agricultor"} />
+      <NavbarAgricultor />
       <div className="container mx-auto px-4 py-6">
         {/* Banner de bienvenida */}
         <BannerBienvenida nombre={nombreAgricultor} />

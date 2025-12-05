@@ -57,7 +57,7 @@ const GestionInventario = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <NavbarAgricultor nombre={"Juan Pérez"} rol={"Agricultor"} />
+      <NavbarAgricultor />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <EncabezadoInventario
