@@ -19,9 +19,11 @@ public class SolicitudActualizarProducto {
   @NotNull
   @Min(0)
   private Integer stock;
+  @NotNull
+  @Min(0)
+  private Integer stockMin;
   @NotBlank
   @Pattern(regexp = "^(TUBERCULOS|VERDURAS|FRUTAS|GRANOS|LACTEOS|CARNES)$")
   private String categoria;
   private String imagenUrl;
 }
-

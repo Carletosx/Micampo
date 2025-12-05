@@ -79,20 +79,20 @@ export const AuthProvider = ({ children }) => {
         const msg = formatError(data, 'Error de inicio de sesión');
         throw new Error(msg);
       }
-      localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem('refreshToken', data.refreshToken);
+      sessionStorage.setItem('accessToken', data.accessToken);
+      sessionStorage.setItem('refreshToken', data.refreshToken);
       try {
         const payload = JSON.parse(atob(data.accessToken.split('.') [1]));
         const displayName = payload?.nombre || (payload?.sub || email || '').split('@')[0];
         const avatarUrl = payload?.avatarUrl || null;
         const usuario = { email: payload?.sub || email, role: payload?.rol, id: payload?.usuarioId, displayName, avatarUrl };
         setUser(usuario);
-        localStorage.setItem('user', JSON.stringify(usuario));
+        sessionStorage.setItem('user', JSON.stringify(usuario));
       } catch {
         const displayName = (email || '').split('@')[0];
         const usuario = { email, role: 'DESCONOCIDO', displayName };
         setUser(usuario);
-        localStorage.setItem('user', JSON.stringify(usuario));
+        sessionStorage.setItem('user', JSON.stringify(usuario));
       }
       setIsAuthenticated(true);
       return { success: true };
@@ -130,12 +130,12 @@ export const AuthProvider = ({ children }) => {
         const avatarUrl = payload?.avatarUrl || null;
         const nuevoUsuario = { email: payload?.sub || userData.email, role: payload?.rol, id: payload?.usuarioId, displayName, avatarUrl };
         setUser(nuevoUsuario);
-        localStorage.setItem('user', JSON.stringify(nuevoUsuario));
+      sessionStorage.setItem('user', JSON.stringify(nuevoUsuario));
       } catch {
         const displayName = userData?.nombre || (userData.email || '').split('@')[0];
         const nuevoUsuario = { email: userData.email, role: rol, displayName };
         setUser(nuevoUsuario);
-        localStorage.setItem('user', JSON.stringify(nuevoUsuario));
+      sessionStorage.setItem('user', JSON.stringify(nuevoUsuario));
       }
       setIsAuthenticated(true);
       return { success: true };
@@ -152,14 +152,14 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('user');
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('refreshToken');
   };
 
   const updateProfile = async ({ nombre, avatarUrl }) => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = sessionStorage.getItem('accessToken');
       const body = JSON.stringify({ nombre, avatarUrl });
       const { resp, data } = await requestWithTimeoutRetry(`${API_BASE}/auth/autenticacion/perfil`, {
         method: 'PUT',
@@ -178,7 +178,7 @@ export const AuthProvider = ({ children }) => {
         avatarUrl: data?.avatarUrl ?? avatarUrl ?? user?.avatarUrl
       };
       setUser(nuevo);
-      localStorage.setItem('user', JSON.stringify(nuevo));
+      sessionStorage.setItem('user', JSON.stringify(nuevo));
       return { success: true, data };
     } catch (e) {
       return { success: false, error: e?.message || 'Error al actualizar perfil' };
@@ -186,7 +186,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const refreshAccessToken = async () => {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = sessionStorage.getItem('refreshToken');
     if (!refreshToken) return { success: false, error: 'No hay token de refresco' };
     const body = JSON.stringify({ tokenRefresco: refreshToken });
     const { resp, data } = await requestWithTimeoutRetry(`${API_BASE}/auth/autenticacion/refrescar`, {
@@ -197,15 +197,15 @@ export const AuthProvider = ({ children }) => {
     if (!resp.ok) {
       return { success: false, error: data?.mensaje || data?.error || 'No se pudo refrescar' };
     }
-    localStorage.setItem('accessToken', data.accessToken);
-    if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+    sessionStorage.setItem('accessToken', data.accessToken);
+    if (data.refreshToken) sessionStorage.setItem('refreshToken', data.refreshToken);
     try {
       const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
       const displayName = payload?.nombre || (payload?.sub || user?.email || '').split('@')[0];
       const avatarUrl = payload?.avatarUrl || user?.avatarUrl || null;
       const nuevo = { email: payload?.sub || user?.email, role: payload?.rol || user?.role, id: payload?.usuarioId || user?.id, displayName, avatarUrl };
       setUser(nuevo);
-      localStorage.setItem('user', JSON.stringify(nuevo));
+      sessionStorage.setItem('user', JSON.stringify(nuevo));
     } catch {}
     setIsAuthenticated(true);
     return { success: true };
@@ -213,12 +213,12 @@ export const AuthProvider = ({ children }) => {
 
   // Verificar si hay un usuario en localStorage al cargar
   React.useEffect(() => {
-    const storedUser = localStorage.getItem('user');
+    const storedUser = sessionStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
       setIsAuthenticated(true);
     }
-    const token = localStorage.getItem('accessToken');
+    const token = sessionStorage.getItem('accessToken');
     if (token) {
       requestWithTimeoutRetry(`${API_BASE}/auth/autenticacion/validar`, {
         method: 'GET',
@@ -229,9 +229,9 @@ export const AuthProvider = ({ children }) => {
           if (!r.success) {
             setUser(null);
             setIsAuthenticated(false);
-            localStorage.removeItem('user');
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
+            sessionStorage.removeItem('user');
+            sessionStorage.removeItem('accessToken');
+            sessionStorage.removeItem('refreshToken');
           }
         }
       }).catch(async () => {
@@ -239,9 +239,9 @@ export const AuthProvider = ({ children }) => {
         if (!r.success) {
           setUser(null);
           setIsAuthenticated(false);
-          localStorage.removeItem('user');
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
+          sessionStorage.removeItem('user');
+          sessionStorage.removeItem('accessToken');
+          sessionStorage.removeItem('refreshToken');
         }
       });
     }

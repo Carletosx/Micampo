@@ -2,12 +2,15 @@ package com.agromarket.productos.service;
 
 import com.agromarket.productos.domain.Categoria;
 import com.agromarket.productos.domain.Producto;
+import com.agromarket.productos.domain.ProductoDetalle;
 import com.agromarket.productos.dto.SolicitudCrearProducto;
 import com.agromarket.productos.dto.SolicitudActualizarProducto;
+import com.agromarket.productos.dto.DetalleProductoDTO;
 import com.agromarket.productos.events.ProductoCreadoEvento;
 import com.agromarket.productos.events.EventosConfig;
 import com.agromarket.productos.events.PublicadorEventos;
 import com.agromarket.productos.repository.RepositorioProducto;
+import com.agromarket.productos.repository.RepositorioProductoDetalle;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -22,10 +25,12 @@ import java.util.stream.Collectors;
 public class ServicioProductos {
   private final RepositorioProducto repoProducto;
   private final PublicadorEventos publicadorEventos;
+  private final RepositorioProductoDetalle repoDetalle;
 
-  public ServicioProductos(RepositorioProducto repoProducto, PublicadorEventos publicadorEventos) {
+  public ServicioProductos(RepositorioProducto repoProducto, PublicadorEventos publicadorEventos, RepositorioProductoDetalle repoDetalle) {
     this.repoProducto = repoProducto;
     this.publicadorEventos = publicadorEventos;
+    this.repoDetalle = repoDetalle;
   }
 
   public Page<Producto> listar(String q, String categoria, Double minPrecio, Double maxPrecio, Integer page, Integer size, Boolean includeInactive) {
@@ -57,7 +62,7 @@ public class ServicioProductos {
 
   @Transactional
   public Producto crear(SolicitudCrearProducto req) {
-    Producto p = Producto.builder().nombre(req.getNombre()).descripcion(req.getDescripcion()).precio(req.getPrecio()).stock(req.getStock()).categoria(Categoria.valueOf(req.getCategoria())).imagenUrl(req.getImagenUrl()).activo(true).creadoEn(Instant.now()).build();
+    Producto p = Producto.builder().nombre(req.getNombre()).descripcion(req.getDescripcion()).precio(req.getPrecio()).stock(req.getStock()).stockMin(req.getStockMin()).categoria(Categoria.valueOf(req.getCategoria())).imagenUrl(req.getImagenUrl()).activo(true).creadoEn(Instant.now()).build();
     Producto saved = repoProducto.save(p);
     ProductoCreadoEvento ev = new ProductoCreadoEvento();
     ev.setProductoId(saved.getId());
@@ -78,6 +83,7 @@ public class ServicioProductos {
     p.setDescripcion(req.getDescripcion());
     p.setPrecio(req.getPrecio());
     p.setStock(req.getStock());
+    p.setStockMin(req.getStockMin());
     p.setCategoria(Categoria.valueOf(req.getCategoria()));
     p.setImagenUrl(req.getImagenUrl());
     return repoProducto.save(p);
@@ -100,5 +106,26 @@ public class ServicioProductos {
     Producto p = obtener(id);
     p.setActivo(true);
     return repoProducto.save(p);
+  }
+
+  public ProductoDetalle obtenerDetalle(Long productoId) {
+    return repoDetalle.findByProductoId(productoId).orElseGet(() -> {
+      Producto producto = obtener(productoId);
+      ProductoDetalle d = ProductoDetalle.builder().producto(producto).actualizadoEn(Instant.now()).build();
+      return repoDetalle.save(d);
+    });
+  }
+
+  @Transactional
+  public ProductoDetalle actualizarDetalle(Long productoId, DetalleProductoDTO dto) {
+    ProductoDetalle det = repoDetalle.findByProductoId(productoId).orElseGet(() -> {
+      Producto p = obtener(productoId);
+      return ProductoDetalle.builder().producto(p).actualizadoEn(Instant.now()).build();
+    });
+    det.setDescripcionLarga(dto.getDescripcionLarga());
+    det.setInformacionAdicional(dto.getInformacionAdicional());
+    det.setVideoUrl(dto.getVideoUrl());
+    det.setActualizadoEn(Instant.now());
+    return repoDetalle.save(det);
   }
 }

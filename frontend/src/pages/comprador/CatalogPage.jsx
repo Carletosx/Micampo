@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { FaHeart, FaRegHeart, FaStar, FaRegStar, FaShoppingCart, FaCheck } from 'react-icons/fa';
 import { useCart } from '../../contexts/CartContext';
 import { useFavorites } from '../../contexts/FavoritesContext';
+import { listProducts } from '../../api/products.js';
+import { API_ORIGIN } from '../../api/config.js';
 
 const PLACEHOLDER_IMG = 'https://via.placeholder.com/300x200?text=Imagen+no+disponible';
 
@@ -91,7 +93,7 @@ const ProductCard = ({ producto }) => {
       <Link to={`/product/${producto.id}`} className="block">
         <div className="relative">
           <img 
-            src={producto.imagenUrl || PLACEHOLDER_IMG} 
+            src={(producto.imagenUrl && producto.imagenUrl.startsWith('/uploads/')) ? `${API_ORIGIN}${producto.imagenUrl}` : (producto.imagenUrl || PLACEHOLDER_IMG)} 
             alt={producto.nombre} 
             className="w-full h-48 object-cover"
             onError={(e) => {
@@ -152,38 +154,21 @@ const ProductCard = ({ producto }) => {
 };
 
 const CatalogPage = () => {
-  const [categoriaActual, setCategoriaActual] = useState('Agricultura');
+  const [categoriaActual, setCategoriaActual] = useState('');
   const [subcategoriaActual, setSubcategoriaActual] = useState('');
   const [precioRango, setPrecioRango] = useState([0, 50]);
   const [productosFiltrados, setProductosFiltrados] = useState([]);
+  const [pageInfo, setPageInfo] = useState({ number: 0, size: 30, totalPages: 1 });
 
-  useEffect(() => {
-    const fetchProductos = async () => {
-      try {
-        const token = localStorage.getItem('accessToken');
-        const params = new URLSearchParams();
-        params.append('page', '0');
-        params.append('size', '12');
-        params.append('maxPrecio', String(precioRango[1]));
-        const url = `/api/products/productos?${params.toString()}`;
-        console.log('GET', url, 'Authorization Bearer presente:', !!token);
-        const resp = await fetch(url, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
-        console.log('Respuesta productos status:', resp.status);
-        const data = await resp.json();
-        console.log('Respuesta productos body:', data);
-        if (!resp.ok) {
-          throw new Error('Error al obtener productos');
-        }
-        const lista = Array.isArray(data?.content) ? data.content : [];
-        setProductosFiltrados(lista);
-      } catch (e) {
-        console.log('Error obteniendo productos:', e);
-      }
-    };
-    fetchProductos();
-  }, [precioRango]);
+  const cargarPagina = async (page = 0) => {
+    const { ok, data, page: pInfo } = await listProducts({ page, size: pageInfo.size, maxPrecio: precioRango[1] });
+    if (ok && Array.isArray(data)) {
+      const activos = data.filter((p) => p.activo);
+      setProductosFiltrados(activos);
+      if (pInfo) setPageInfo(pInfo);
+    }
+  };
+  useEffect(() => { cargarPagina(0); }, [precioRango]);
   
   // Categorías disponibles
   const categorias = [
@@ -349,30 +334,12 @@ const CatalogPage = () => {
             </div>
 
             {/* Paginación */}
-            <div className="flex justify-center mt-10">
-              <nav className="inline-flex">
-                <a href="#" className="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50">
-                  &lt;
-                </a>
-                <a href="#" className="px-3 py-2 border-t border-b border-gray-300 bg-green-500 text-white">
-                  1
-                </a>
-                <a href="#" className="px-3 py-2 border-t border-b border-gray-300 bg-white text-gray-500 hover:bg-gray-50">
-                  2
-                </a>
-                <a href="#" className="px-3 py-2 border-t border-b border-gray-300 bg-white text-gray-500 hover:bg-gray-50">
-                  3
-                </a>
-                <a href="#" className="px-3 py-2 border-t border-b border-gray-300 bg-white text-gray-500 hover:bg-gray-50">
-                  ...
-                </a>
-                <a href="#" className="px-3 py-2 border-t border-b border-gray-300 bg-white text-gray-500 hover:bg-gray-50">
-                  20
-                </a>
-                <a href="#" className="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50">
-                  &gt;
-                </a>
-              </nav>
+            <div className="flex justify-between items-center mt-10">
+              <div className="text-sm text-gray-600">Página {pageInfo.number + 1} de {pageInfo.totalPages}</div>
+              <div className="inline-flex gap-2">
+                <button disabled={pageInfo.number === 0} onClick={() => cargarPagina(pageInfo.number - 1)} className="px-3 py-2 rounded-md border border-gray-300 disabled:opacity-50">Anterior</button>
+                <button disabled={pageInfo.number + 1 >= pageInfo.totalPages} onClick={() => cargarPagina(pageInfo.number + 1)} className="px-3 py-2 rounded-md border border-gray-300 disabled:opacity-50">Siguiente</button>
+              </div>
             </div>
           </div>
         </div>

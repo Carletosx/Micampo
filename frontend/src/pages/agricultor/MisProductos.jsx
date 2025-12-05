@@ -8,6 +8,8 @@ import TarjetasResumenProductos from '../../components/productos/TarjetasResumen
 import TarjetaProducto from '../../components/productos/TarjetaProducto.jsx';
 import ModalNuevoProducto from '../../components/productos/ModalNuevoProducto.jsx';
 import ModalEliminarProducto from '../../components/productos/ModalEliminarProducto.jsx';
+import ModalDetalleProducto from '../../components/productos/ModalDetalleProducto.jsx';
+import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
 import { listProducts, createProduct, updateProduct, deleteProduct, pauseProduct, activateProduct } from '../../api/products.js';
 import { NotificationContext } from '../../contexts/NotificationContext';
 
@@ -29,6 +31,7 @@ export default function MisProductos() {
   const navigate = useNavigate();
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pageInfo, setPageInfo] = useState({ number: 0, size: 30, totalPages: 1 });
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('todas');
   const [statusFilter, setStatusFilter] = useState('todos');
@@ -36,29 +39,31 @@ export default function MisProductos() {
   const [modalNuevoAbierto, setModalNuevoAbierto] = useState(false);
   const [productoEditando, setProductoEditando] = useState(null);
   const [productoEliminando, setProductoEliminando] = useState(null);
+  const [productoDetalleAbierto, setProductoDetalleAbierto] = useState(null);
+  const [productoPausando, setProductoPausando] = useState(null);
 
   const categoriasOptions = useMemo(() => {
     const set = new Set(productos.map((p) => p.categoria));
     return Array.from(set);
   }, [productos]);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const { ok, data, unauthorized } = await listProducts({ includeInactive: 'true' });
-      if (unauthorized) {
-        addNotification('Tu sesión expiró. Inicia sesión nuevamente.', 'error');
-        navigate(ROUTES.LOGIN);
-      } else if (ok && Array.isArray(data)) {
-        const normalized = data.map((p) => ({ ...p, estado: p.activo ? 'activo' : 'inactivo' }));
-        setProductos(normalized);
-      } else {
-        addNotification('No se pudo cargar productos', 'error');
-      }
-      setLoading(false);
-    };
-    load();
-  }, []);
+  const cargarPagina = async (page = 0) => {
+    setLoading(true);
+    const { ok, data, unauthorized, page: pInfo } = await listProducts({ includeInactive: 'true', page, size: pageInfo.size });
+    if (unauthorized) {
+      addNotification('Tu sesión expiró. Inicia sesión nuevamente.', 'error');
+      navigate(ROUTES.LOGIN);
+    } else if (ok && Array.isArray(data)) {
+      const normalized = data.map((p) => ({ ...p, estado: p.activo ? 'activo' : 'inactivo' }));
+      setProductos(normalized);
+      if (pInfo) setPageInfo(pInfo);
+    } else {
+      addNotification('No se pudo cargar productos', 'error');
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { cargarPagina(0); }, []);
 
   const esStockBajo = (p) => p.stockMin > 0 && p.stock <= p.stockMin;
 
@@ -84,19 +89,20 @@ export default function MisProductos() {
   const abrirEditar = (p) => { setProductoEditando(p); setModalNuevoAbierto(true); };
   const confirmarEliminar = (p) => setProductoEliminando(p);
 
-  const pausarProducto = async (p) => {
-    const ok = window.confirm('¿Deseas pausar este producto?');
-    if (!ok) return;
-    const { ok: okApi, unauthorized } = await pauseProduct(p.id);
+  const pausarProducto = (p) => setProductoPausando(p);
+  const confirmarPausa = async () => {
+    if (!productoPausando) return;
+    const { ok: okApi, unauthorized } = await pauseProduct(productoPausando.id);
     if (unauthorized) {
       addNotification('Tu sesión expiró. Inicia sesión nuevamente.', 'error');
       navigate(ROUTES.LOGIN);
       return;
     }
     if (okApi) {
-      setProductos((prev) => prev.map((it) => (it.id === p.id ? { ...it, estado: 'inactivo', activo: false } : it)));
+      setProductos((prev) => prev.map((it) => (it.id === productoPausando.id ? { ...it, estado: 'inactivo', activo: false } : it)));
       addNotification('Producto pausado', 'success');
     } else addNotification('No se pudo pausar el producto', 'error');
+    setProductoPausando(null);
   };
 
   const cerrarModales = () => { setModalNuevoAbierto(false); setProductoEditando(null); setProductoEliminando(null); };
@@ -175,8 +181,16 @@ export default function MisProductos() {
                 } else addNotification('No se pudo activar el producto', 'error')
               }}
               onEliminar={confirmarEliminar}
+              onDetalles={(prod) => setProductoDetalleAbierto(prod)}
             />
           ))}
+        </div>
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm text-gray-600">Página {pageInfo.number + 1} de {pageInfo.totalPages}</div>
+          <div className="flex gap-2">
+            <button disabled={pageInfo.number === 0} onClick={() => cargarPagina(pageInfo.number - 1)} className="px-3 py-2 text-sm rounded border border-gray-300 disabled:opacity-50">Anterior</button>
+            <button disabled={pageInfo.number + 1 >= pageInfo.totalPages} onClick={() => cargarPagina(pageInfo.number + 1)} className="px-3 py-2 text-sm rounded border border-gray-300 disabled:opacity-50">Siguiente</button>
+          </div>
         </div>
       </div>
 
@@ -192,6 +206,23 @@ export default function MisProductos() {
         producto={productoEliminando}
         onClose={() => setProductoEliminando(null)}
         onConfirm={eliminarProducto}
+      />
+
+      <ModalDetalleProducto
+        isOpen={!!productoDetalleAbierto}
+        producto={productoDetalleAbierto}
+        onClose={() => setProductoDetalleAbierto(null)}
+        notify={addNotification}
+        onSaved={() => {}}
+      />
+
+      <ConfirmModal
+        isOpen={!!productoPausando}
+        title="Pausar producto"
+        message={`¿Deseas pausar "${productoPausando?.nombre || ''}"?`}
+        confirmText="Pausar"
+        onCancel={() => setProductoPausando(null)}
+        onConfirm={confirmarPausa}
       />
     </div>
   );

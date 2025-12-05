@@ -81,6 +81,7 @@ export default function ModalNuevoProducto({ isOpen, producto, onClose, onSave }
       descripcion: form.descripcion,
       precio: Number(form.precio),
       stock: Number(form.stock),
+      stockMin: Number(form.stockMin),
       categoria: cat,
       imagenUrl: form.imagenUrl,
     };

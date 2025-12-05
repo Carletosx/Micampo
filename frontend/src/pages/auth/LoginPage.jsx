@@ -32,7 +32,7 @@ const LoginPage = () => {
       if (res?.success) {
         addNotification('¡Inicio de sesión exitoso!', 'success');
         try {
-          const stored = localStorage.getItem('user');
+          const stored = sessionStorage.getItem('user') || localStorage.getItem('user');
           const u = stored ? JSON.parse(stored) : null;
           redirect(u?.role);
         } catch {

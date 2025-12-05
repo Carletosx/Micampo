@@ -24,6 +24,8 @@ public class Producto {
   private BigDecimal precio;
   @Column(nullable = false)
   private Integer stock;
+  @Column(name = "stock_min", nullable = false)
+  private Integer stockMin;
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private Categoria categoria;
@@ -33,4 +35,3 @@ public class Producto {
   @Column(nullable = false)
   private Instant creadoEn;
 }
-
