@@ -94,7 +94,8 @@ export const AuthProvider = ({ children }) => {
       try {
         const payload = JSON.parse(atob(data.accessToken.split('.') [1]));
         const displayName = payload?.nombre || (payload?.sub || email || '').split('@')[0];
-        const usuario = { email: payload?.sub || email, role: payload?.rol, id: payload?.usuarioId, displayName };
+        const avatarUrl = payload?.avatarUrl || null;
+        const usuario = { email: payload?.sub || email, role: payload?.rol, id: payload?.usuarioId, displayName, avatarUrl };
         setUser(usuario);
         localStorage.setItem('user', JSON.stringify(usuario));
       } catch {
@@ -136,7 +137,8 @@ export const AuthProvider = ({ children }) => {
       try {
         const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
         const displayName = payload?.nombre || userData?.nombre || (payload?.sub || userData.email || '').split('@')[0];
-        const nuevoUsuario = { email: payload?.sub || userData.email, role: payload?.rol, id: payload?.usuarioId, displayName };
+        const avatarUrl = payload?.avatarUrl || null;
+        const nuevoUsuario = { email: payload?.sub || userData.email, role: payload?.rol, id: payload?.usuarioId, displayName, avatarUrl };
         setUser(nuevoUsuario);
         localStorage.setItem('user', JSON.stringify(nuevoUsuario));
       } catch {
@@ -163,6 +165,34 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+  };
+
+  const updateProfile = async ({ nombre, avatarUrl }) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const body = JSON.stringify({ nombre, avatarUrl });
+      const { resp, data } = await requestWithTimeoutRetry(`${API_BASE}/auth/autenticacion/perfil`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body
+      }, 4000, 0);
+      if (!resp.ok) {
+        const msg = data?.mensaje || data?.message || data?.error || 'Error al actualizar perfil';
+        return { success: false, error: msg };
+      }
+      const nuevo = {
+        email: data?.correo || user?.email,
+        role: data?.rol || user?.role,
+        id: data?.id || user?.id,
+        displayName: data?.nombre || nombre || user?.displayName,
+        avatarUrl: data?.avatarUrl ?? avatarUrl ?? user?.avatarUrl
+      };
+      setUser(nuevo);
+      localStorage.setItem('user', JSON.stringify(nuevo));
+      return { success: true, data };
+    } catch (e) {
+      return { success: false, error: e?.message || 'Error al actualizar perfil' };
+    }
   };
 
   // Verificar si hay un usuario en localStorage al cargar
@@ -201,7 +231,8 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
-    logout
+    logout,
+    updateProfile
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useContext } from 'react';
 import { useNotification } from '../../contexts/NotificationContext';
+import { AuthContext } from '../../context/AuthContext';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const digitsOnly = (s) => (s || '').replace(/\D/g, '');
@@ -12,14 +13,21 @@ const maskDNI = (dni) => {
 const SeccionInformacionPersonal = () => {
   const { showSuccess, showError } = useNotification();
 
-  const initial = useMemo(() => ({
-    nombres: 'Juan Carlos',
-    apellidos: 'Pérez García',
-    email: 'juan.perez@email.com',
-    telefono: '+51 987 654 321',
-    dni: '12345678',
-    registro: '15 de Enero, 2024',
-  }), []);
+  const { user, updateProfile } = useContext(AuthContext);
+  const initial = useMemo(() => {
+    const full = user?.displayName || '';
+    const parts = full.trim().split(/\s+/);
+    const nombres = parts[0] || '';
+    const apellidos = parts.slice(1).join(' ') || '';
+    return {
+      nombres,
+      apellidos,
+      email: user?.email || '',
+      telefono: '+51 987 654 321',
+      dni: '12345678',
+      registro: '—',
+    };
+  }, [user]);
 
   const [form, setForm] = useState(initial);
   const [editing, setEditing] = useState(false);
@@ -40,12 +48,18 @@ const SeccionInformacionPersonal = () => {
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) { showError('Revisa los campos marcados.'); return; }
     const ok = window.confirm('¿Confirmas guardar los cambios de Información Personal?');
     if (!ok) return;
-    setEditing(false);
-    showSuccess('Información personal actualizada.');
+    const nombre = `${form.nombres} ${form.apellidos}`.trim();
+    const res = await updateProfile({ nombre });
+    if (res?.success) {
+      setEditing(false);
+      showSuccess('Información personal actualizada.');
+    } else {
+      showError(res?.error || 'Error al actualizar perfil');
+    }
   };
 
   const handleCancel = () => {

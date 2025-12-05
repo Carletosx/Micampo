@@ -15,7 +15,7 @@ import { AuthContext } from '../../context/AuthContext';
 
 const PerfilConfiguracion = () => {
   const { showSuccess } = useNotification();
-  const { user } = useContext(AuthContext);
+  const { user, updateProfile } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState('personal');
   const [photoModal, setPhotoModal] = useState(false);
   const [searchParams] = useSearchParams();
@@ -28,9 +28,17 @@ const PerfilConfiguracion = () => {
     }
   }, [searchParams]);
 
-  const handleSavePhoto = (file) => {
+  const handleSavePhoto = async (file) => {
     if (file) {
-      showSuccess('Foto actualizada correctamente.');
+      const url = URL.createObjectURL(file);
+      // En producción usar servicio de subida y URL persistente
+      const res = await (async () => {
+        if (typeof updateProfile === 'function') {
+          return updateProfile({ avatarUrl: url });
+        }
+        return { success: true };
+      })();
+      if (res?.success) showSuccess('Foto actualizada correctamente.');
     }
   };
 

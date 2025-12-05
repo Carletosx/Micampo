@@ -55,7 +55,7 @@ const Navbar = () => {
               <Dropdown
                 trigger={
                   <span className="inline-flex items-center gap-3 px-3 py-2 rounded-full bg-gray-100 border border-gray-200 shadow-sm">
-                    <Avatar name={user?.displayName} />
+                    <Avatar name={user?.displayName} src={user?.avatarUrl} />
                     <span className="flex flex-col leading-tight">
                       <span className="text-sm font-medium text-gray-900">{user?.displayName}</span>
                       <span className="text-xs text-gray-500">{user?.role === 'AGRICULTOR' ? 'Agricultor' : (user?.role === 'ADMIN' ? 'Admin' : 'Comprador')}</span>
