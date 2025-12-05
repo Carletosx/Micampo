@@ -7,7 +7,7 @@ function Badge({ children, color = 'bg-gray-100 text-gray-700' }) {
   );
 }
 
-export default function TarjetaProducto({ producto, onEditar, onPausar, onEliminar }) {
+export default function TarjetaProducto({ producto, onEditar, onPausar, onEliminar, onActivar }) {
   const {
     nombre,
     categoria,
@@ -78,9 +78,12 @@ export default function TarjetaProducto({ producto, onEditar, onPausar, onElimin
               ⏸️ Pausar
             </button>
           ) : (
-            <div className="text-sm bg-gray-100 text-gray-500 font-medium px-3 py-2 rounded text-center select-none">
-              Pausado
-            </div>
+            <button
+              onClick={() => onActivar?.(producto)}
+              className="text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium px-3 py-2 rounded"
+            >
+              ▶️ Activar
+            </button>
           )}
 
           <button

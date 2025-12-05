@@ -28,17 +28,18 @@ public class ServicioProductos {
     this.publicadorEventos = publicadorEventos;
   }
 
-  public Page<Producto> listar(String q, String categoria, Double minPrecio, Double maxPrecio, Integer page, Integer size) {
+  public Page<Producto> listar(String q, String categoria, Double minPrecio, Double maxPrecio, Integer page, Integer size, Boolean includeInactive) {
     PageRequest pr = PageRequest.of(page == null ? 0 : page, size == null ? 10 : size);
     Page<Producto> base;
+    boolean all = Boolean.TRUE.equals(includeInactive);
     if (q != null && !q.isBlank() && categoria != null && !categoria.isBlank()) {
-      base = repoProducto.findByActivoTrueAndCategoriaAndNombreContainingIgnoreCase(Categoria.valueOf(categoria), q, pr);
+      base = all ? repoProducto.findByCategoriaAndNombreContainingIgnoreCase(Categoria.valueOf(categoria), q, pr) : repoProducto.findByActivoTrueAndCategoriaAndNombreContainingIgnoreCase(Categoria.valueOf(categoria), q, pr);
     } else if (q != null && !q.isBlank()) {
-      base = repoProducto.findByActivoTrueAndNombreContainingIgnoreCase(q, pr);
+      base = all ? repoProducto.findByNombreContainingIgnoreCase(q, pr) : repoProducto.findByActivoTrueAndNombreContainingIgnoreCase(q, pr);
     } else if (categoria != null && !categoria.isBlank()) {
-      base = repoProducto.findByActivoTrueAndCategoria(Categoria.valueOf(categoria), pr);
+      base = all ? repoProducto.findByCategoria(Categoria.valueOf(categoria), pr) : repoProducto.findByActivoTrueAndCategoria(Categoria.valueOf(categoria), pr);
     } else {
-      base = repoProducto.findByActivoTrue(pr);
+      base = all ? repoProducto.findAllBy(pr) : repoProducto.findByActivoTrue(pr);
     }
     if (minPrecio != null || maxPrecio != null) {
       List<Producto> filtrados = base.getContent().stream().filter(p -> {
@@ -84,8 +85,20 @@ public class ServicioProductos {
 
   @Transactional
   public void eliminar(Long id) {
+    repoProducto.deleteById(id);
+  }
+
+  @Transactional
+  public Producto pausar(Long id) {
     Producto p = obtener(id);
     p.setActivo(false);
-    repoProducto.save(p);
+    return repoProducto.save(p);
+  }
+
+  @Transactional
+  public Producto activar(Long id) {
+    Producto p = obtener(id);
+    p.setActivo(true);
+    return repoProducto.save(p);
   }
 }

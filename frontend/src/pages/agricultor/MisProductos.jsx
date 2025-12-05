@@ -8,7 +8,7 @@ import TarjetasResumenProductos from '../../components/productos/TarjetasResumen
 import TarjetaProducto from '../../components/productos/TarjetaProducto.jsx';
 import ModalNuevoProducto from '../../components/productos/ModalNuevoProducto.jsx';
 import ModalEliminarProducto from '../../components/productos/ModalEliminarProducto.jsx';
-import { listProducts, createProduct, updateProduct, deleteProduct } from '../../api/products.js';
+import { listProducts, createProduct, updateProduct, deleteProduct, pauseProduct, activateProduct } from '../../api/products.js';
 import { NotificationContext } from '../../contexts/NotificationContext';
 
 const mockProductosInicial = [
@@ -45,12 +45,13 @@ export default function MisProductos() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const { ok, data, unauthorized } = await listProducts();
+      const { ok, data, unauthorized } = await listProducts({ includeInactive: 'true' });
       if (unauthorized) {
         addNotification('Tu sesión expiró. Inicia sesión nuevamente.', 'error');
         navigate(ROUTES.LOGIN);
       } else if (ok && Array.isArray(data)) {
-        setProductos(data);
+        const normalized = data.map((p) => ({ ...p, estado: p.activo ? 'activo' : 'inactivo' }));
+        setProductos(normalized);
       } else {
         addNotification('No se pudo cargar productos', 'error');
       }
@@ -86,9 +87,14 @@ export default function MisProductos() {
   const pausarProducto = async (p) => {
     const ok = window.confirm('¿Deseas pausar este producto?');
     if (!ok) return;
-    const { ok: okApi } = await updateProduct(p.id, { estado: 'inactivo' });
+    const { ok: okApi, unauthorized } = await pauseProduct(p.id);
+    if (unauthorized) {
+      addNotification('Tu sesión expiró. Inicia sesión nuevamente.', 'error');
+      navigate(ROUTES.LOGIN);
+      return;
+    }
     if (okApi) {
-      setProductos((prev) => prev.map((it) => (it.id === p.id ? { ...it, estado: 'inactivo' } : it)));
+      setProductos((prev) => prev.map((it) => (it.id === p.id ? { ...it, estado: 'inactivo', activo: false } : it)));
       addNotification('Producto pausado', 'success');
     } else addNotification('No se pudo pausar el producto', 'error');
   };
@@ -156,6 +162,18 @@ export default function MisProductos() {
               producto={p}
               onEditar={abrirEditar}
               onPausar={pausarProducto}
+              onActivar={async (prod) => {
+                const { ok: okApi, unauthorized } = await activateProduct(prod.id)
+                if (unauthorized) {
+                  addNotification('Tu sesión expiró. Inicia sesión nuevamente.', 'error');
+                  navigate(ROUTES.LOGIN);
+                  return;
+                }
+                if (okApi) {
+                  setProductos((prev) => prev.map((it) => (it.id === prod.id ? { ...it, estado: 'activo', activo: true } : it)))
+                  addNotification('Producto activado', 'success')
+                } else addNotification('No se pudo activar el producto', 'error')
+              }}
               onEliminar={confirmarEliminar}
             />
           ))}

@@ -29,3 +29,15 @@ export const deleteProduct = async (id) => {
   const res = await fetch(`${API_BASE}/products/${id}`, { method: 'DELETE', headers: { ...authHeader() } })
   return { ok: res.ok, unauthorized: res.status === 401 }
 }
+
+export const pauseProduct = async (id) => {
+  const res = await fetch(`${API_BASE}/products/${id}/pausar`, { method: 'PATCH', headers: { ...authHeader() } })
+  const data = await res.json().catch(() => null)
+  return { ok: res.ok, unauthorized: res.status === 401, data }
+}
+
+export const activateProduct = async (id) => {
+  const res = await fetch(`${API_BASE}/products/${id}/activar`, { method: 'PATCH', headers: { ...authHeader() } })
+  const data = await res.json().catch(() => null)
+  return { ok: res.ok, unauthorized: res.status === 401, data }
+}

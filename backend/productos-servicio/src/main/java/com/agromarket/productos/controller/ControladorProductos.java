@@ -16,8 +16,8 @@ public class ControladorProductos {
   public ControladorProductos(ServicioProductos servicioProductos) { this.servicioProductos = servicioProductos; }
 
   @GetMapping
-  public ResponseEntity<Page<Producto>> listar(@RequestParam(required = false) String q, @RequestParam(required = false) String categoria, @RequestParam(required = false) Double minPrecio, @RequestParam(required = false) Double maxPrecio, @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
-    return ResponseEntity.ok(servicioProductos.listar(q, categoria, minPrecio, maxPrecio, page, size));
+  public ResponseEntity<Page<Producto>> listar(@RequestParam(required = false) String q, @RequestParam(required = false) String categoria, @RequestParam(required = false) Double minPrecio, @RequestParam(required = false) Double maxPrecio, @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size, @RequestParam(required = false, defaultValue = "false") Boolean includeInactive) {
+    return ResponseEntity.ok(servicioProductos.listar(q, categoria, minPrecio, maxPrecio, page, size, includeInactive));
   }
 
   @GetMapping("/{id}")
@@ -31,5 +31,10 @@ public class ControladorProductos {
 
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> eliminar(@PathVariable Long id) { servicioProductos.eliminar(id); return ResponseEntity.noContent().build(); }
-}
 
+  @PatchMapping("/{id}/pausar")
+  public ResponseEntity<Producto> pausar(@PathVariable Long id) { return ResponseEntity.ok(servicioProductos.pausar(id)); }
+
+  @PatchMapping("/{id}/activar")
+  public ResponseEntity<Producto> activar(@PathVariable Long id) { return ResponseEntity.ok(servicioProductos.activar(id)); }
+}

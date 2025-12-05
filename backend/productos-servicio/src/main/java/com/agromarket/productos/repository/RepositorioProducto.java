@@ -11,5 +11,8 @@ public interface RepositorioProducto extends JpaRepository<Producto, Long> {
   Page<Producto> findByActivoTrueAndCategoria(Categoria categoria, Pageable pageable);
   Page<Producto> findByActivoTrueAndNombreContainingIgnoreCase(String nombre, Pageable pageable);
   Page<Producto> findByActivoTrueAndCategoriaAndNombreContainingIgnoreCase(Categoria categoria, String nombre, Pageable pageable);
+  Page<Producto> findAllBy(Pageable pageable);
+  Page<Producto> findByCategoria(Categoria categoria, Pageable pageable);
+  Page<Producto> findByNombreContainingIgnoreCase(String nombre, Pageable pageable);
+  Page<Producto> findByCategoriaAndNombreContainingIgnoreCase(Categoria categoria, String nombre, Pageable pageable);
 }
-
