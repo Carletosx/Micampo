@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import API_BASE, { API_ORIGIN } from '../../api/config.js';
 
 export default function ModalNuevoProducto({ isOpen, producto, onClose, onSave }) {
   const [form, setForm] = useState({
@@ -10,10 +11,11 @@ export default function ModalNuevoProducto({ isOpen, producto, onClose, onSave }
     stock: 0,
     stockMin: 0,
     descripcion: '',
-    imagen: '',
+    imagenUrl: '',
   });
   const [errors, setErrors] = useState({});
   const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState(null);
 
   useEffect(() => {
     if (producto) {
@@ -26,7 +28,7 @@ export default function ModalNuevoProducto({ isOpen, producto, onClose, onSave }
         stock: producto.stock ?? 0,
         stockMin: producto.stockMin ?? 0,
         descripcion: producto.descripcion || '',
-        imagen: producto.imagen || '',
+        imagenUrl: producto.imagenUrl || '',
       });
     } else {
       setForm({
@@ -38,7 +40,7 @@ export default function ModalNuevoProducto({ isOpen, producto, onClose, onSave }
         stock: 0,
         stockMin: 0,
         descripcion: '',
-        imagen: '',
+        imagenUrl: '',
       });
     }
     setErrors({});
@@ -56,13 +58,72 @@ export default function ModalNuevoProducto({ isOpen, producto, onClose, onSave }
     return Object.keys(e).length === 0;
   };
 
+  const mapCategoria = (c) => {
+    const t = (c || '').toLowerCase();
+    if (t === 'tubérculos' || t === 'tuberculos') return 'TUBERCULOS';
+    if (t === 'verduras') return 'VERDURAS';
+    if (t === 'frutas') return 'FRUTAS';
+    if (t === 'granos') return 'GRANOS';
+    if (t === 'lácteos' || t === 'lacteos') return 'LACTEOS';
+    if (t === 'carnes') return 'CARNES';
+    return null;
+  };
+
   const handleSave = () => {
     if (!validate()) return;
-    const payload = { ...form };
+    const cat = mapCategoria(form.categoria);
+    if (!cat) {
+      setErrors((prev) => ({ ...prev, categoria: 'Categoría no soportada' }));
+      return;
+    }
+    const payload = {
+      nombre: form.nombre,
+      descripcion: form.descripcion,
+      precio: Number(form.precio),
+      stock: Number(form.stock),
+      categoria: cat,
+      imagenUrl: form.imagenUrl,
+    };
     onSave?.(payload);
   };
 
   const setField = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const allowed = ['image/jpeg','image/png','image/webp'];
+    const maxSize = 2 * 1024 * 1024;
+    if (!allowed.includes(file.type)) {
+      setErrors((prev) => ({ ...prev, imagenUrl: 'Formato no permitido (jpeg, png, webp)' }));
+      setUploadStatus('error');
+      return;
+    }
+    if (file.size > maxSize) {
+      setErrors((prev) => ({ ...prev, imagenUrl: 'La imagen supera 2MB' }));
+      setUploadStatus('error');
+      return;
+    }
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch(`${API_BASE}/files/upload`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (res.ok && data?.url) {
+        setField('imagenUrl', data.url);
+        setUploadStatus('ok');
+      } else {
+        setErrors((prev) => ({ ...prev, imagenUrl: 'No se pudo subir la imagen' }));
+        setUploadStatus('error');
+      }
+    } catch {
+      setErrors((prev) => ({ ...prev, imagenUrl: 'Error al subir la imagen' }));
+      setUploadStatus('error');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -91,7 +152,7 @@ export default function ModalNuevoProducto({ isOpen, producto, onClose, onSave }
               value={form.categoria}
               onChange={(e) => setField('categoria', e.target.value)}
             >
-              {['Tubérculos','Verduras','Frutas','Granos','Legumbres','Hierbas'].map((c) => (
+              {['Tubérculos','Verduras','Frutas','Granos','Lácteos','Carnes'].map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -174,12 +235,13 @@ export default function ModalNuevoProducto({ isOpen, producto, onClose, onSave }
             <label className="text-sm text-gray-600">Imagen del producto</label>
             <input type="file" accept="image/*" className="w-full" onChange={handleImageChange} />
             {uploading && <p className="text-xs text-gray-500 mt-1">Subiendo imagen...</p>}
-            {form.imagen && (
+            {!uploading && uploadStatus === 'ok' && <p className="text-xs text-green-600 mt-1">Imagen subida</p>}
+            {form.imagenUrl && (
               <div className="mt-2">
-                <img src={form.imagen} alt="preview" className="h-24 rounded border" />
+                <img src={form.imagenUrl.startsWith('/uploads/') ? `${API_ORIGIN}${form.imagenUrl}` : form.imagenUrl} alt="preview" className="h-24 rounded border" />
               </div>
             )}
-            {errors.imagen && <p className="text-red-600 text-xs mt-1">{errors.imagen}</p>}
+            {errors.imagenUrl && <p className="text-red-600 text-xs mt-1">{errors.imagenUrl}</p>}
           </div>
         </div>
 
@@ -201,23 +263,3 @@ export default function ModalNuevoProducto({ isOpen, producto, onClose, onSave }
     </div>
   );
 }
-  const handleImageChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch('/api/files/upload', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (res.ok && data?.url) {
-        setField('imagen', data.url);
-      } else {
-        setErrors((prev) => ({ ...prev, imagen: 'No se pudo subir la imagen' }));
-      }
-    } catch {
-      setErrors((prev) => ({ ...prev, imagen: 'Error al subir la imagen' }));
-    } finally {
-      setUploading(false);
-    }
-  };

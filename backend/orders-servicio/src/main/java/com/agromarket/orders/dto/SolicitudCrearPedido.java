@@ -6,7 +6,6 @@ import java.util.List; import java.math.BigDecimal;
 
 @Getter @Setter
 public class SolicitudCrearPedido {
-  @NotNull
   private Long usuarioAuthId;
   private Long agricultorAuthId;
   @NotBlank
@@ -28,4 +27,3 @@ public class SolicitudCrearPedido {
     private BigDecimal precioUnitario;
   }
 }
-

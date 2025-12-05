@@ -42,6 +42,16 @@ public class ServicioPedidos {
 
   @Transactional
   public Pedido crear(SolicitudCrearPedido req) {
+    if (req.getUsuarioAuthId() == null) throw new IllegalArgumentException("usuarioAuthId requerido");
+    if (req.getMetodoPago() == null || req.getMetodoPago().isBlank()) throw new IllegalArgumentException("metodoPago requerido");
+    if (req.getMetodoEnvio() == null || req.getMetodoEnvio().isBlank()) throw new IllegalArgumentException("metodoEnvio requerido");
+    if (req.getItems() == null || req.getItems().isEmpty()) throw new IllegalArgumentException("items requeridos");
+    for (SolicitudCrearPedido.Item itv : req.getItems()) {
+      if (itv.getProductoId() == null) throw new IllegalArgumentException("productoId requerido");
+      if (itv.getNombreProducto() == null || itv.getNombreProducto().isBlank()) throw new IllegalArgumentException("nombreProducto requerido");
+      if (itv.getCantidad() == null || itv.getCantidad() < 1) throw new IllegalArgumentException("cantidad inválida");
+      if (itv.getPrecioUnitario() == null || itv.getPrecioUnitario().compareTo(BigDecimal.ZERO) < 0) throw new IllegalArgumentException("precioUnitario inválido");
+    }
     String numero = UUID.randomUUID().toString();
     Pedido p = Pedido.builder().numero(numero).estado(EstadoPedido.PENDIENTE).metodoPago(req.getMetodoPago()).metodoEnvio(req.getMetodoEnvio()).usuarioAuthId(req.getUsuarioAuthId()).agricultorAuthId(req.getAgricultorAuthId()).subtotal(BigDecimal.ZERO).envio(BigDecimal.ZERO).descuento(BigDecimal.ZERO).total(BigDecimal.ZERO).creadoEn(Instant.now()).build();
     Pedido saved = repoPedido.save(p);
@@ -158,4 +168,3 @@ public class ServicioPedidos {
     repoPedido.save(p);
   }
 }
-

@@ -1,4 +1,5 @@
 import React from 'react';
+import { API_ORIGIN } from '../../api/config.js';
 
 function Badge({ children, color = 'bg-gray-100 text-gray-700' }) {
   return (
@@ -16,7 +17,7 @@ export default function TarjetaProducto({ producto, onEditar, onPausar, onElimin
     unidad = 'kg',
     stock = 0,
     stockMin = 0,
-    imagen,
+    imagenUrl,
   } = producto;
 
   const activo = estado === 'activo';
@@ -26,12 +27,14 @@ export default function TarjetaProducto({ producto, onEditar, onPausar, onElimin
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition overflow-hidden">
-      <div className="relative h-32 bg-gradient-to-br from-green-600 to-green-400 flex items-center justify-center">
-        {imagen ? (
-          <img src={imagen} alt={nombre} className="h-20 w-20 object-contain" />
-        ) : (
-          <div className="h-20 w-20 rounded-full bg-green-300/50" />
-        )}
+      <div className="relative h-40 bg-gradient-to-br from-green-600 to-green-400 flex items-center justify-center">
+        <div className="h-28 w-28 rounded-md bg-white/90 shadow border border-white overflow-hidden">
+          {imagenUrl ? (
+            <img src={imagenUrl.startsWith('/uploads/') ? `${API_ORIGIN}${imagenUrl}` : imagenUrl} alt={nombre} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-green-300/40" />
+          )}
+        </div>
         <div className="absolute top-2 left-2">
           <Badge color="bg-white/90 text-gray-700 border border-gray-200">Stock: {stock} {unidad}</Badge>
         </div>

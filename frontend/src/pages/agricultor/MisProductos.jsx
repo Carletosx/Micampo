@@ -1,4 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import ROUTES from '../../routes/paths.js';
 import NavbarAgricultor from '../../components/layout/NavbarAgricultor.jsx';
 import EncabezadoProductos from '../../components/productos/EncabezadoProductos.jsx';
 import BarraBusquedaFiltros from '../../components/productos/BarraBusquedaFiltros.jsx';
@@ -6,6 +8,8 @@ import TarjetasResumenProductos from '../../components/productos/TarjetasResumen
 import TarjetaProducto from '../../components/productos/TarjetaProducto.jsx';
 import ModalNuevoProducto from '../../components/productos/ModalNuevoProducto.jsx';
 import ModalEliminarProducto from '../../components/productos/ModalEliminarProducto.jsx';
+import { listProducts, createProduct, updateProduct, deleteProduct } from '../../api/products.js';
+import { NotificationContext } from '../../contexts/NotificationContext';
 
 const mockProductosInicial = [
   { id: 1, nombre: 'Papa Blanca Premium', categoria: 'Tubérculos', estado: 'activo', descripcion: 'Papa blanca de primera calidad, cultivada orgánicamente en los Andes peruanos', precio: 2.5, unidad: 'kg', stock: 150, stockMin: 50, imagen: '' },
@@ -21,7 +25,10 @@ const mockProductosInicial = [
 ];
 
 export default function MisProductos() {
-  const [productos, setProductos] = useState(mockProductosInicial);
+  const { addNotification } = useContext(NotificationContext);
+  const navigate = useNavigate();
+  const [productos, setProductos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('todas');
   const [statusFilter, setStatusFilter] = useState('todos');
@@ -34,6 +41,23 @@ export default function MisProductos() {
     const set = new Set(productos.map((p) => p.categoria));
     return Array.from(set);
   }, [productos]);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      const { ok, data, unauthorized } = await listProducts();
+      if (unauthorized) {
+        addNotification('Tu sesión expiró. Inicia sesión nuevamente.', 'error');
+        navigate(ROUTES.LOGIN);
+      } else if (ok && Array.isArray(data)) {
+        setProductos(data);
+      } else {
+        addNotification('No se pudo cargar productos', 'error');
+      }
+      setLoading(false);
+    };
+    load();
+  }, []);
 
   const esStockBajo = (p) => p.stockMin > 0 && p.stock <= p.stockMin;
 
@@ -59,26 +83,51 @@ export default function MisProductos() {
   const abrirEditar = (p) => { setProductoEditando(p); setModalNuevoAbierto(true); };
   const confirmarEliminar = (p) => setProductoEliminando(p);
 
-  const pausarProducto = (p) => {
+  const pausarProducto = async (p) => {
     const ok = window.confirm('¿Deseas pausar este producto?');
     if (!ok) return;
-    setProductos((prev) => prev.map((it) => (it.id === p.id ? { ...it, estado: 'inactivo' } : it)));
+    const { ok: okApi } = await updateProduct(p.id, { estado: 'inactivo' });
+    if (okApi) {
+      setProductos((prev) => prev.map((it) => (it.id === p.id ? { ...it, estado: 'inactivo' } : it)));
+      addNotification('Producto pausado', 'success');
+    } else addNotification('No se pudo pausar el producto', 'error');
   };
 
   const cerrarModales = () => { setModalNuevoAbierto(false); setProductoEditando(null); setProductoEliminando(null); };
 
-  const guardarProducto = (payload) => {
+  const guardarProducto = async (payload) => {
     if (productoEditando) {
-      setProductos((prev) => prev.map((p) => (p.id === productoEditando.id ? { ...p, ...payload } : p)));
+      const { ok, unauthorized } = await updateProduct(productoEditando.id, payload);
+      if (unauthorized) {
+        addNotification('Tu sesión expiró. Inicia sesión nuevamente.', 'error');
+        navigate(ROUTES.LOGIN);
+      } else if (ok) {
+        setProductos((prev) => prev.map((p) => (p.id === productoEditando.id ? { ...p, ...payload } : p)));
+        addNotification('Producto actualizado', 'success');
+      } else addNotification('No se pudo actualizar el producto', 'error');
     } else {
-      const nuevo = { id: Date.now(), ...payload };
-      setProductos((prev) => [nuevo, ...prev]);
+      const { ok, data, unauthorized } = await createProduct(payload);
+      if (unauthorized) {
+        addNotification('Tu sesión expiró. Inicia sesión nuevamente.', 'error');
+        navigate(ROUTES.LOGIN);
+      } else if (ok) {
+        const nuevo = data || { id: Date.now(), ...payload };
+        setProductos((prev) => [nuevo, ...prev]);
+        addNotification('Producto creado', 'success');
+      } else addNotification('No se pudo crear el producto', 'error');
     }
     setModalNuevoAbierto(false); setProductoEditando(null);
   };
 
-  const eliminarProducto = (p) => {
-    setProductos((prev) => prev.filter((it) => it.id !== p.id));
+  const eliminarProducto = async (p) => {
+    const { ok, unauthorized } = await deleteProduct(p.id);
+    if (unauthorized) {
+      addNotification('Tu sesión expiró. Inicia sesión nuevamente.', 'error');
+      navigate(ROUTES.LOGIN);
+    } else if (ok) {
+      setProductos((prev) => prev.filter((it) => it.id !== p.id));
+      addNotification('Producto eliminado', 'success');
+    } else addNotification('No se pudo eliminar el producto', 'error');
     setProductoEliminando(null);
   };
 
@@ -101,7 +150,7 @@ export default function MisProductos() {
         <TarjetasResumenProductos total={total} activos={activos} stockBajo={stockBajo} inactivos={inactivos} />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {productosFiltrados.map((p) => (
+          {loading ? (<div className="col-span-full text-center text-gray-500">Cargando productos...</div>) : productosFiltrados.map((p) => (
             <TarjetaProducto
               key={p.id}
               producto={p}

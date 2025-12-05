@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const requestWithTimeoutRetry = async (url, options = {}, timeoutMs = 2500, retries = 0) => {
+  const requestWithTimeoutRetry = async (url, options = {}, timeoutMs = 8000, retries = 1) => {
     try {
       return await requestWithTimeout(url, options, timeoutMs);
     } catch (err) {
@@ -44,24 +44,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const postJsonWithFallback = async (relativePathAfterAuth, body, timeoutMs = 2500) => {
-    const primaryUrl = `${API_BASE}/auth/${relativePathAfterAuth}`;
+  const postJsonGatewayOnly = async (relativePathAfterAuth, body, timeoutMs = 8000) => {
+    const url = `${API_BASE}/auth/${relativePathAfterAuth}`;
     const options = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(body)
     };
-    try {
-      const r1 = await requestWithTimeoutRetry(primaryUrl, options, timeoutMs, 0);
-      return r1;
-    } catch (e) {
-      if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV) {
-        const fallbackUrl = `${AUTH_DIRECT_BASE}/${relativePathAfterAuth}`;
-        const r2 = await requestWithTimeoutRetry(fallbackUrl, options, timeoutMs, 0);
-        return r2;
-      }
-      throw e;
-    }
+    return requestWithTimeoutRetry(url, options, timeoutMs, 0);
   };
 
   const formatError = (data, fallback = 'Error') => {
@@ -80,7 +70,7 @@ export const AuthProvider = ({ children }) => {
       const payload = { correo: email, contrasenia: password };
       console.log('POST /api/auth/autenticacion/ingreso payload:', payload);
       const t0 = performance.now();
-      const { resp, data } = await postJsonWithFallback('autenticacion/ingreso', payload, 2500);
+      const { resp, data } = await postJsonGatewayOnly('autenticacion/ingreso', payload, 8000);
       const t1 = performance.now();
       console.log('Respuesta /ingreso status:', resp.status);
       console.log('Tiempo /ingreso ms:', Math.round(t1 - t0));
@@ -123,7 +113,7 @@ export const AuthProvider = ({ children }) => {
       const payload = { nombre: userData.nombre, correo: userData.email, contrasenia: userData.password, rol };
       console.log('POST /api/auth/autenticacion/registro payload:', payload);
       const t0 = performance.now();
-      const { resp, data } = await postJsonWithFallback('autenticacion/registro', payload, 2500);
+      const { resp, data } = await postJsonGatewayOnly('autenticacion/registro', payload, 8000);
       const t1 = performance.now();
       console.log('Respuesta /registro status:', resp.status);
       console.log('Tiempo /registro ms:', Math.round(t1 - t0));
@@ -195,6 +185,32 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshAccessToken = async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) return { success: false, error: 'No hay token de refresco' };
+    const body = JSON.stringify({ tokenRefresco: refreshToken });
+    const { resp, data } = await requestWithTimeoutRetry(`${API_BASE}/auth/autenticacion/refrescar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body
+    }, 8000, 1);
+    if (!resp.ok) {
+      return { success: false, error: data?.mensaje || data?.error || 'No se pudo refrescar' };
+    }
+    localStorage.setItem('accessToken', data.accessToken);
+    if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+    try {
+      const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+      const displayName = payload?.nombre || (payload?.sub || user?.email || '').split('@')[0];
+      const avatarUrl = payload?.avatarUrl || user?.avatarUrl || null;
+      const nuevo = { email: payload?.sub || user?.email, role: payload?.rol || user?.role, id: payload?.usuarioId || user?.id, displayName, avatarUrl };
+      setUser(nuevo);
+      localStorage.setItem('user', JSON.stringify(nuevo));
+    } catch {}
+    setIsAuthenticated(true);
+    return { success: true };
+  };
+
   // Verificar si hay un usuario en localStorage al cargar
   React.useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -207,20 +223,26 @@ export const AuthProvider = ({ children }) => {
       requestWithTimeoutRetry(`${API_BASE}/auth/autenticacion/validar`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
-      }, 2000, 0).then(({ resp }) => {
+      }, 3000, 0).then(async ({ resp }) => {
         if (!resp.ok) {
+          const r = await refreshAccessToken();
+          if (!r.success) {
+            setUser(null);
+            setIsAuthenticated(false);
+            localStorage.removeItem('user');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+          }
+        }
+      }).catch(async () => {
+        const r = await refreshAccessToken();
+        if (!r.success) {
           setUser(null);
           setIsAuthenticated(false);
           localStorage.removeItem('user');
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
         }
-      }).catch(() => {
-        setUser(null);
-        setIsAuthenticated(false);
-        localStorage.removeItem('user');
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
       });
     }
   }, []);
@@ -232,7 +254,8 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    updateProfile
+    updateProfile,
+    refreshAccessToken
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

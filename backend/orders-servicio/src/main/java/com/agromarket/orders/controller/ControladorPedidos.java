@@ -17,7 +17,10 @@ public class ControladorPedidos {
   public ControladorPedidos(ServicioPedidos servicioPedidos) { this.servicioPedidos = servicioPedidos; }
 
   @PostMapping
-  public ResponseEntity<Pedido> crear(@Valid @RequestBody SolicitudCrearPedido req) { return ResponseEntity.ok(servicioPedidos.crear(req)); }
+  public ResponseEntity<Pedido> crear(@Valid @RequestBody SolicitudCrearPedido req, @RequestHeader(value = "X-Auth-Id", required = false) Long authId) {
+    if (req.getUsuarioAuthId() == null && authId != null) req.setUsuarioAuthId(authId);
+    return ResponseEntity.ok(servicioPedidos.crear(req));
+  }
 
   @GetMapping("/{id}")
   public ResponseEntity<Pedido> obtener(@PathVariable Long id) { return ResponseEntity.ok(servicioPedidos.obtener(id)); }
@@ -37,4 +40,3 @@ public class ControladorPedidos {
   @DeleteMapping("/{id}/items/{itemId}")
   public ResponseEntity<Void> eliminarItem(@PathVariable Long id, @PathVariable Long itemId) { servicioPedidos.eliminarItem(id, itemId); return ResponseEntity.noContent().build(); }
 }
-

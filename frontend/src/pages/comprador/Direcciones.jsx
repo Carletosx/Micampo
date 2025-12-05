@@ -1,9 +1,9 @@
-import React from 'react'
+import { useState, useEffect } from 'react'
 import { SkeletonCard } from '../../components/ui/Skeleton'
 
 const Direcciones = () => {
-  const [loading, setLoading] = React.useState(true)
-  React.useEffect(() => { const t = setTimeout(() => setLoading(false), 600); return () => clearTimeout(t) }, [])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => { const t = setTimeout(() => setLoading(false), 600); return () => clearTimeout(t) }, [])
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-10">
