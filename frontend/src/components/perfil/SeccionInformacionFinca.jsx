@@ -1,15 +1,17 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNotification } from '../../contexts/NotificationContext';
+import { listFincas, createFinca, updateFinca } from '../../api/users.js';
 
 const SeccionInformacionFinca = () => {
   const { showSuccess, showError } = useNotification();
 
   const initial = useMemo(() => ({
-    nombreFinca: 'Finca Los Andes',
-    descripcion: 'Finca familiar dedicada al cultivo orgánico de productos andinos. Contamos con 15 hectáreas de terreno certificado para agricultura orgánica',
-    region: 'Lima',
-    provincia: 'Cañete',
-    direccion: 'Km 143 Panamericana Sur, Valle de Cañete',
+    id: null,
+    nombreFinca: '',
+    descripcion: '',
+    region: '',
+    provincia: '',
+    direccion: '',
     distrito: '',
     postal: '',
     gps: '',
@@ -18,6 +20,28 @@ const SeccionInformacionFinca = () => {
   const [form, setForm] = useState(initial);
   const [editing, setEditing] = useState(false);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    const load = async () => {
+      const { ok, data, unauthorized } = await listFincas(0, 1);
+      if (unauthorized) { showError('Tu sesión expiró.'); return }
+      if (ok && Array.isArray(data) && data.length) {
+        const f = data[0];
+        setForm({
+          id: f.id,
+          nombreFinca: f.nombre || '',
+          descripcion: f.descripcion || '',
+          region: f.ubicacion || '',
+          provincia: '',
+          direccion: '',
+          distrito: '',
+          postal: '',
+          gps: '',
+        });
+      }
+    };
+    load();
+  }, []);
 
   const validate = () => {
     const e = {};
@@ -30,12 +54,17 @@ const SeccionInformacionFinca = () => {
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) { showError('Revisa los campos marcados.'); return; }
     const ok = window.confirm('¿Confirmas guardar los cambios de la Finca?');
     if (!ok) return;
-    setEditing(false);
-    showSuccess('Información de la finca actualizada.');
+    const payload = { nombre: form.nombreFinca, ubicacion: form.region, descripcion: form.descripcion };
+    let res;
+    if (form.id) res = await updateFinca(form.id, payload);
+    else res = await createFinca(payload);
+    if (res.unauthorized) { showError('Tu sesión expiró.'); return }
+    if (res.ok) { setEditing(false); showSuccess('Información de la finca actualizada.'); if (!form.id) setForm({ ...form, id: res.data.id }) }
+    else showError('No se pudo guardar la finca');
   };
 
   const handleCancel = () => {

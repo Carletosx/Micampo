@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useContext } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNotification } from '../../contexts/NotificationContext';
-import { AuthContext } from '../../context/AuthContext';
+import { getPerfil, updatePerfil } from '../../api/users.js';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const digitsOnly = (s) => (s || '').replace(/\D/g, '');
@@ -13,25 +13,29 @@ const maskDNI = (dni) => {
 const SeccionInformacionPersonal = () => {
   const { showSuccess, showError } = useNotification();
 
-  const { user, updateProfile } = useContext(AuthContext);
-  const initial = useMemo(() => {
-    const full = user?.displayName || '';
-    const parts = full.trim().split(/\s+/);
-    const nombres = parts[0] || '';
-    const apellidos = parts.slice(1).join(' ') || '';
-    return {
-      nombres,
-      apellidos,
-      email: user?.email || '',
-      telefono: '+51 987 654 321',
-      dni: '12345678',
-      registro: '—',
-    };
-  }, [user]);
+  const initial = useMemo(() => ({ nombres: '', apellidos: '', email: '', telefono: '+51 ', dni: '', registro: '—' }), []);
 
   const [form, setForm] = useState(initial);
   const [editing, setEditing] = useState(false);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    const load = async () => {
+      const { ok, data, unauthorized } = await getPerfil();
+      if (unauthorized) { showError('Tu sesión expiró.'); return }
+      if (ok && data) {
+        setForm({
+          nombres: data.nombres || '',
+          apellidos: data.apellidos || '',
+          email: data.email || '',
+          telefono: data.telefono || '+51 ',
+          dni: data.dni || '',
+          registro: '—',
+        });
+      }
+    };
+    load();
+  }, []);
 
   const validate = () => {
     const e = {};
@@ -52,13 +56,14 @@ const SeccionInformacionPersonal = () => {
     if (!validate()) { showError('Revisa los campos marcados.'); return; }
     const ok = window.confirm('¿Confirmas guardar los cambios de Información Personal?');
     if (!ok) return;
-    const nombre = `${form.nombres} ${form.apellidos}`.trim();
-    const res = await updateProfile({ nombre });
-    if (res?.success) {
+    const payload = { nombres: form.nombres, apellidos: form.apellidos, email: form.email, telefono: form.telefono, dni: form.dni };
+    const { ok, unauthorized } = await updatePerfil(payload);
+    if (unauthorized) { showError('Tu sesión expiró. Inicia nuevamente.'); return }
+    if (ok) {
       setEditing(false);
       showSuccess('Información personal actualizada.');
     } else {
-      showError(res?.error || 'Error al actualizar perfil');
+      showError('Error al actualizar perfil');
     }
   };
 

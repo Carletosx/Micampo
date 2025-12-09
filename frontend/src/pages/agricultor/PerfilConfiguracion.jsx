@@ -12,6 +12,8 @@ import ModalCambiarFoto from '../../components/perfil/ModalCambiarFoto';
 import ToastContainerCustom from '../../components/notifications/ToastContainer';
 import { useNotification } from '../../contexts/NotificationContext';
 import { AuthContext } from '../../context/AuthContext';
+import API_BASE, { API_ORIGIN } from '../../api/config.js';
+import { updatePerfil } from '../../api/users.js';
 
 const PerfilConfiguracion = () => {
   const { showSuccess } = useNotification();
@@ -29,16 +31,14 @@ const PerfilConfiguracion = () => {
   }, [searchParams]);
 
   const handleSavePhoto = async (file) => {
-    if (file) {
-      const url = URL.createObjectURL(file);
-      // En producción usar servicio de subida y URL persistente
-      const res = await (async () => {
-        if (typeof updateProfile === 'function') {
-          return updateProfile({ avatarUrl: url });
-        }
-        return { success: true };
-      })();
-      if (res?.success) showSuccess('Foto actualizada correctamente.');
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch(`${API_BASE}/files/upload`, { method: 'POST', body: fd });
+    const data = await res.json().catch(() => null);
+    if (res.ok && data?.url) {
+      const { ok } = await updatePerfil({ avatarUrl: data.url });
+      if (ok) showSuccess('Foto actualizada correctamente.');
     }
   };
 
