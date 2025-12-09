@@ -28,6 +28,7 @@ const ProductCard = ({ producto }) => {
   const [showToast, setShowToast] = useState(false);
   const [favoriteToast, setFavoriteToast] = useState(false);
   const [isAddedToFavorites, setIsAddedToFavorites] = useState(false);
+  const stockBajo = (producto?.stockMin ?? 0) > 0 && (producto?.stock ?? 0) <= (producto?.stockMin ?? 0)
   
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -74,11 +75,11 @@ const ProductCard = ({ producto }) => {
   
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden relative">
-      {producto.descuento && (
-        <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-          {producto.descuento} Descuento
-        </div>
-      )}
+      <div className="absolute top-2 right-2 flex items-center gap-2">
+        {stockBajo && (
+          <span className="bg-yellow-100 text-yellow-700 text-xs font-bold px-2 py-1 rounded border border-yellow-200">Stock Bajo</span>
+        )}
+      </div>
       {showToast && (
         <div className="fixed top-20 right-4 bg-white text-green-600 px-6 py-3 rounded-lg shadow-xl z-50 flex items-center transform transition-all duration-500 ease-in-out animate-bounce">
           <div className="bg-green-100 p-2 rounded-full mr-3">
@@ -159,6 +160,7 @@ const CatalogPage = () => {
   const [precioRango, setPrecioRango] = useState([0, 50]);
   const [productosFiltrados, setProductosFiltrados] = useState([]);
   const [pageInfo, setPageInfo] = useState({ number: 0, size: 30, totalPages: 1 });
+  const [onlyAvailable, setOnlyAvailable] = useState(false)
 
   const cargarPagina = async (page = 0) => {
     const { ok, data, page: pInfo } = await listProducts({ page, size: pageInfo.size, maxPrecio: precioRango[1] });
@@ -169,6 +171,12 @@ const CatalogPage = () => {
     }
   };
   useEffect(() => { cargarPagina(0); }, [precioRango]);
+
+  const visibles = onlyAvailable ? productosFiltrados.filter((p) => {
+    const min = p.stockMin ?? 0
+    const st = p.stock ?? 0
+    return min > 0 ? st > min : st > 0
+  }) : productosFiltrados
   
   // Categorías disponibles
   const categorias = [
@@ -261,6 +269,15 @@ const CatalogPage = () => {
               />
             </div>
 
+            {/* Disponibilidad */}
+            <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+              <h3 className="text-lg font-semibold mb-4 uppercase">Disponibilidad</h3>
+              <label className="flex items-center gap-2 text-gray-700">
+                <input type="checkbox" checked={onlyAvailable} onChange={(e) => setOnlyAvailable(e.target.checked)} />
+                <span>Mostrar solo disponibles</span>
+              </label>
+            </div>
+
             {/* Clasificación */}
             <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
               <h3 className="text-lg font-semibold mb-4 uppercase">Clasificación</h3>
@@ -314,7 +331,7 @@ const CatalogPage = () => {
           <div className="w-full md:w-3/4">
             {/* Encabezado de resultados */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-              <p className="text-gray-600 mb-4 md:mb-0">Mostrando 1-12 De 120 Resultados</p>
+              <p className="text-gray-600 mb-4 md:mb-0">Mostrando {visibles.length} resultados</p>
               <div className="flex items-center">
                 <span className="mr-2 text-gray-600">Ordenar Por Característica</span>
                 <select className="border rounded-md p-2 bg-white">
@@ -327,11 +344,15 @@ const CatalogPage = () => {
             </div>
 
             {/* Grid de productos */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {productosFiltrados.map((producto) => (
-                <ProductCard key={producto.id} producto={producto} />
-              ))}
-            </div>
+            {visibles.length === 0 ? (
+              <div className="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-600">No hay productos disponibles con los filtros seleccionados</div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {visibles.map((producto) => (
+                  <ProductCard key={producto.id} producto={producto} />
+                ))}
+              </div>
+            )}
 
             {/* Paginación */}
             <div className="flex justify-between items-center mt-10">
