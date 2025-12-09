@@ -20,6 +20,10 @@
 *.swp
 .DS_Store
 
+# MySQL
+backend/mysql-data/
+
+
 # Node (por si el frontend está en el repo)
 node_modules/
 dist/

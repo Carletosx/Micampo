@@ -3,9 +3,11 @@ import { FaSearch, FaSortUp, FaSortDown } from 'react-icons/fa';
 import FilasProductoInventario from './FilasProductoInventario';
 
 const calcularEstado = (producto) => {
-  const margen = producto.stockMinimo * 0.5; // 50% por encima del mínimo
-  if (producto.stockActual <= producto.stockMinimo) return 'critico';
-  if (producto.stockActual <= producto.stockMinimo + margen) return 'bajo';
+  const stockActual = producto.stockActual || 0;
+  const stockMinimo = producto.stockMinimo || 0;
+  const margen = Math.max(stockMinimo * 0.5, 1); // 50% por encima del mínimo
+  if (stockActual <= stockMinimo) return 'critico';
+  if (stockActual <= stockMinimo + margen) return 'bajo';
   return 'disponible';
 };
 
@@ -14,6 +16,9 @@ const TablaInventario = ({
   onEditarProducto,
   onActualizarStock,
   onVerDetalles,
+  onCrearMovimiento,
+  onReservarStock,
+  onConfirmarVenta,
 }) => {
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todos');
@@ -47,8 +52,10 @@ const TablaInventario = ({
       let A = a[sortBy];
       let B = b[sortBy];
       if (sortBy === 'valorTotal') {
-        A = a.stockActual * a.precioUnitario;
-        B = b.stockActual * b.precioUnitario;
+        const precioA = a.precio || a.precioUnitario || 0;
+        const precioB = b.precio || b.precioUnitario || 0;
+        A = a.stockActual * precioA;
+        B = b.stockActual * precioB;
       }
       if (typeof A === 'string') {
         A = A.toLowerCase();
@@ -159,6 +166,9 @@ const TablaInventario = ({
                 onEditar={onEditarProducto}
                 onActualizarStock={onActualizarStock}
                 onVerDetalles={onVerDetalles}
+                onCrearMovimiento={onCrearMovimiento}
+                onReservarStock={onReservarStock}
+                onConfirmarVenta={onConfirmarVenta}
               />
             ))}
             {visibles.length === 0 && (

@@ -7,11 +7,13 @@ import com.agromarket.inventory.dto.*;
 import com.agromarket.inventory.service.ServicioInventario;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
 @RequestMapping("/inventario")
+@PreAuthorize("hasRole('AGRICULTOR')")
 public class ControladorInventario {
   private final ServicioInventario servicioInventario;
   public ControladorInventario(ServicioInventario servicioInventario) { this.servicioInventario = servicioInventario; }

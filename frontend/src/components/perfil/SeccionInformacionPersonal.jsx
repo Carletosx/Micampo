@@ -54,8 +54,8 @@ const SeccionInformacionPersonal = () => {
 
   const handleSave = async () => {
     if (!validate()) { showError('Revisa los campos marcados.'); return; }
-    const ok = window.confirm('¿Confirmas guardar los cambios de Información Personal?');
-    if (!ok) return;
+    const confirmed = window.confirm('¿Confirmas guardar los cambios de Información Personal?');
+    if (!confirmed) return;
     const payload = { nombres: form.nombres, apellidos: form.apellidos, email: form.email, telefono: form.telefono, dni: form.dni };
     const { ok, unauthorized } = await updatePerfil(payload);
     if (unauthorized) { showError('Tu sesión expiró. Inicia nuevamente.'); return }
