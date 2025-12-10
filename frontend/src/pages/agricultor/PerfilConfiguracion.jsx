@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import NavbarAgricultor from '../../components/layout/NavbarAgricultor';
 import EncabezadoPerfil from '../../components/perfil/EncabezadoPerfil';
 import SidebarPerfil from '../../components/perfil/SidebarPerfil';
+import SeccionCuentaAuth from '../../components/perfil/SeccionCuentaAuth';
 import SeccionInformacionPersonal from '../../components/perfil/SeccionInformacionPersonal';
 import SeccionInformacionFinca from '../../components/perfil/SeccionInformacionFinca';
 import SeccionMetodosPago from '../../components/perfil/SeccionMetodosPago';
@@ -75,6 +76,7 @@ const PerfilConfiguracion = () => {
           <div className="lg:col-span-2 space-y-6">
             {activeTab === 'personal' && (
               <>
+                <SeccionCuentaAuth />
                 <SeccionInformacionPersonal />
                 <SeccionInformacionFinca />
               </>

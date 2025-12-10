@@ -5,7 +5,7 @@ import lombok.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "fincas", indexes = {@Index(name = "idx_fincas_usuario", columnList = "auth_usuario_id")})
+@Table(name = "fincas", indexes = {@Index(name = "idx_fincas_usuario", columnList = "agricultor_id")})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,8 +16,8 @@ public class Finca {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(name = "auth_usuario_id", nullable = false)
-  private Long authUsuarioId;
+  @Column(name = "agricultor_id", nullable = false)
+  private Long agricultorId;
 
   @Column(length = 160)
   private String nombre;

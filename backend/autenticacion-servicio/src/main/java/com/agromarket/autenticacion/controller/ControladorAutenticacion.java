@@ -62,4 +62,11 @@ public class ControladorAutenticacion {
     Usuario u = servicioAutenticacion.actualizarPerfil(correo, req.getNombre(), req.getAvatarUrl());
     return ResponseEntity.ok(new UsuarioRespuesta(u.getId(), u.getCorreo(), u.getNombre(), u.getRol(), u.isActivo(), u.getAvatarUrl()));
   }
+
+  @GetMapping("/public/usuarios/{id}")
+  public ResponseEntity<UsuarioRespuesta> obtenerUsuarioPublico(@PathVariable Long id) {
+    Usuario u = servicioAutenticacion.obtenerPorId(id);
+    if (u == null) return ResponseEntity.notFound().build();
+    return ResponseEntity.ok(new UsuarioRespuesta(u.getId(), u.getCorreo(), u.getNombre(), u.getRol(), u.isActivo(), u.getAvatarUrl()));
+  }
 }

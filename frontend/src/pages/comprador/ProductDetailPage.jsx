@@ -1,11 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { FaHome, FaChevronRight, FaHeart, FaPlay } from 'react-icons/fa';
 import { useCart } from '../../contexts/CartContext';
 import { getProduct } from '../../api/products.js';
+import { getFincasPublicByAuth } from '../../api/users.js';
 import { getProductDetail } from '../../api/productDetails.js';
+import { listReviews, createReview, updateReview, deleteReview, fetchAuthorName } from '../../api/reviews.js';
 import { API_ORIGIN } from '../../api/config.js';
 import Button from '../../components/ui/Button';
+import { AuthContext } from '../../context/AuthContext';
+import ModalEditarResena from '../../components/productos/ModalEditarResena.jsx'
 import Tabs from '../../components/ui/Tabs';
 
 const PLACEHOLDER_IMG = 'https://via.placeholder.com/600x400?text=Sin+imagen';
@@ -19,6 +23,24 @@ const ProductDetailPage = () => {
   const [showToast, setShowToast] = useState(false);
   const [product, setProduct] = useState(null);
   const [detail, setDetail] = useState({ descripcionLarga: '', informacionAdicional: '', videoUrl: '' });
+  const [fincaInfo, setFincaInfo] = useState(null);
+  const [avgRating, setAvgRating] = useState(0)
+  const [newRating, setNewRating] = useState(0)
+  const [newComment, setNewComment] = useState('')
+  const [reviews, setReviews] = useState([])
+  const { user } = useContext(AuthContext)
+  const [newAuthorName, setNewAuthorName] = useState('')
+  const [editingOpen, setEditingOpen] = useState(false)
+  const [editingReview, setEditingReview] = useState(null)
+  const getFromInfoRows = (labels = []) => {
+    try {
+      const parsed = detail?.informacionAdicional ? JSON.parse(detail.informacionAdicional) : []
+      if (!Array.isArray(parsed)) return ''
+      const lower = labels.map(l => l.toLowerCase())
+      const r = parsed.find(x => lower.includes((x.etiqueta || '').toLowerCase()))
+      return r?.valor || ''
+    } catch { return '' }
+  }
   const toEmbed = (url) => {
     if (!url) return ''
     try {
@@ -41,9 +63,32 @@ const ProductDetailPage = () => {
   useEffect(() => {
     const load = async () => {
       const { ok, data } = await getProduct(productId);
-      if (ok && data && data.activo) setProduct(data);
+      if (ok && data && data.activo) {
+        setProduct(data);
+        if (data.vendedorAuthId) {
+          const fp = await getFincasPublicByAuth(data.vendedorAuthId);
+          if (fp.ok && Array.isArray(fp.data) && fp.data.length) {
+            const f = fp.data[0];
+            setFincaInfo({ nombre: f.nombre || '', ubicacion: f.ubicacion || '', descripcion: f.descripcion || '' });
+          }
+        }
+      }
       const r = await getProductDetail(productId);
       if (r.ok && r.data) setDetail(r.data);
+      const rv = await listReviews(productId)
+      if (rv.ok && Array.isArray(rv.data)) {
+        const avg = rv.data.length ? Math.round(rv.data.reduce((s,it)=> s+(it.calificacion||0),0)/rv.data.length) : 0
+        setAvgRating(avg)
+        // Enriquecer nombres si faltan
+        const enriched = await Promise.all(rv.data.map(async (r)=> {
+          if (!r.autorNombre && r.autorAuthId) {
+            const n = await fetchAuthorName(r.autorAuthId)
+            return { ...r, autorNombre: n || null }
+          }
+          return r
+        }))
+        setReviews(enriched)
+      }
     };
     load();
   }, [productId]);
@@ -156,16 +201,11 @@ const ProductDetailPage = () => {
               {/* Estrellas de calificación */}
               <div className="flex items-center mt-2">
                 {[...Array(5)].map((_, i) => (
-                  <svg 
-                    key={i} 
-                    className={`w-4 h-4 ${i < 4 ? 'text-yellow-400' : 'text-gray-300'}`} 
-                    fill="currentColor" 
-                    viewBox="0 0 20 20"
-                  >
+                  <svg key={i} className={`w-4 h-4 ${i < avgRating ? 'text-yellow-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                 ))}
-                <span className="ml-2 text-sm text-gray-600">(0 Reseñas)</span>
+                <span className="ml-2 text-sm text-gray-600">({avgRating} promedio)</span>
               </div>
               
               {/* Precios */}
@@ -240,7 +280,7 @@ const ProductDetailPage = () => {
           
           {/* Pestañas */}
           <div className="border-t border-gray-200 mt-8">
-            <Tabs items={[{ key: 'descripcion', label: 'DESCRIPCIONES' }, { key: 'informacion', label: 'INFORMACIÓN ADICIONAL' }, { key: 'resenas', label: 'RESEÑAS (0)' }]} active={activeTab} onChange={setActiveTab} />
+            <Tabs items={[{ key: 'descripcion', label: 'DESCRIPCIONES' }, { key: 'informacion', label: 'INFORMACIÓN ADICIONAL' }, { key: 'resenas', label: `RESEÑAS (${reviews.length})` }]} active={activeTab} onChange={setActiveTab} />
             
             {/* Contenido de las pestañas */}
             <div className="p-6">
@@ -294,12 +334,20 @@ const ProductDetailPage = () => {
                     </div>
                     
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-md mb-3 text-green-700">Información</h4>
+                      <h4 className="font-medium text-md mb-3 text-green-700">Información del Agricultor</h4>
                       <table className="w-full border-collapse">
                         <tbody>
                           <tr>
-                            <td className="py-2 px-3 text-gray-700 font-medium text-left">Stock mínimo</td>
-                            <td className="py-2 px-3 text-gray-700 text-left">{product?.stockMin ?? 0}</td>
+                            <td className="py-2 px-3 text-gray-700 font-medium text-left">Finca (Marca)</td>
+                            <td className="py-2 px-3 text-gray-700 text-left">{(fincaInfo?.nombre || getFromInfoRows(['Marca','Finca'])) || '—'}</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 px-3 text-gray-700 font-medium text-left">Ubicación</td>
+                            <td className="py-2 px-3 text-gray-700 text-left">{(fincaInfo?.ubicacion || getFromInfoRows(['Ubicación','Ubicacion'])) || '—'}</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 px-3 text-gray-700 font-medium text-left">Descripción de la finca</td>
+                            <td className="py-2 px-3 text-gray-700 text-left">{(fincaInfo?.descripcion || getFromInfoRows(['Descripción de la finca','Descripcion de la finca'])) || '—'}</td>
                           </tr>
                         </tbody>
                       </table>
@@ -312,83 +360,93 @@ const ProductDetailPage = () => {
                 <div>
                   <h3 className="font-medium text-lg mb-3">Reseñas de Clientes</h3>
                   <div className="mb-6 pb-6 border-b border-gray-200">
-                    <div className="flex items-center mb-3">
-                      <img 
-                        src="/src/assets/images/avatar.jpg" 
-                        alt="Usuario" 
-                        className="w-10 h-10 rounded-full mr-3"
-                      />
-                      <div>
-                        <h4 className="font-medium">María García</h4>
-                        <div className="flex items-center mt-1">
-                          {[...Array(5)].map((_, i) => (
-                            <svg 
-                              key={i} 
-                              className={`w-4 h-4 ${i < 5 ? 'text-yellow-400' : 'text-gray-300'}`} 
-                              fill="currentColor" 
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                          ))}
-                          <span className="ml-2 text-sm text-gray-500">Hace 2 días</span>
-                        </div>
+                    {reviews.length === 0 ? (
+                      <p className="text-gray-600">Aún no hay reseñas.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {reviews.map((r, idx) => (
+                          <div key={idx} className="border border-gray-200 rounded-md p-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-gray-200" />
+                                <div className="text-sm text-gray-800 font-medium">{r.autorNombre || (r.autorAuthId ? `Usuario ${r.autorAuthId}` : 'Invitado')}</div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                {[...Array(5)].map((_, i) => (
+                                  <svg key={i} className={`w-4 h-4 ${i < (r.calificacion||0) ? 'text-yellow-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                ))}
+                                {user && user.id === r.autorAuthId && (
+                                  <div className="flex items-center gap-2">
+                                    <button className="text-xs text-green-700" onClick={()=>{ setEditingReview(r); setEditingOpen(true) }}>Editar</button>
+                                    <button className="text-xs text-red-600" onClick={async ()=>{
+                                      if (!confirm('¿Eliminar esta reseña?')) return
+                                      const del = await deleteReview(r.id)
+                                      if (del.ok) {
+                                        const rv = await listReviews(productId)
+                                        if (rv.ok) setReviews(rv.data)
+                                      }
+                                    }}>Eliminar</button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <p className="text-gray-600 mt-2 text-sm whitespace-pre-line">{r.comentario || ''}</p>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                    <p className="text-gray-600">Excelente producto, muy fresco y de gran calidad. Lo recomiendo totalmente.</p>
+                    )}
                   </div>
                   
                   <div>
                     <h3 className="font-medium text-lg mb-3">Añadir una reseña</h3>
-                    <form>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 mb-2">Tu calificación</label>
+                      <div className="flex">
+                        {[...Array(5)].map((_, i) => (
+                          <svg key={i} onClick={()=> setNewRating(i+1)} className={`w-6 h-6 cursor-pointer ${i < newRating ? 'text-yellow-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 mb-2" htmlFor="review">Tu reseña</label>
+                      <textarea id="review" className="w-full border border-gray-300 rounded-md p-2 h-32" placeholder="Escribe tu opinión sobre este producto..." value={newComment} onChange={(e)=> setNewComment(e.target.value)} />
+                    </div>
+                    {!user && (
                       <div className="mb-4">
-                        <label className="block text-gray-700 mb-2">Tu calificación</label>
-                        <div className="flex">
-                          {[...Array(5)].map((_, i) => (
-                            <svg 
-                              key={i} 
-                              className="w-6 h-6 text-gray-300 cursor-pointer hover:text-yellow-400" 
-                              fill="currentColor" 
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                          ))}
-                        </div>
+                        <label className="block text-gray-700 mb-2" htmlFor="author">Tu nombre</label>
+                        <input id="author" className="w-full border border-gray-300 rounded-md p-2" placeholder="Tu nombre" value={newAuthorName} onChange={(e)=> setNewAuthorName(e.target.value)} />
                       </div>
-                      <div className="mb-4">
-                        <label className="block text-gray-700 mb-2" htmlFor="review">Tu reseña</label>
-                        <textarea 
-                          id="review"
-                          className="w-full border border-gray-300 rounded-md p-2 h-32"
-                          placeholder="Escribe tu opinión sobre este producto..."
-                        ></textarea>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <label className="block text-gray-700 mb-2" htmlFor="name">Nombre</label>
-                          <input 
-                            type="text" 
-                            id="name"
-                            className="w-full border border-gray-300 rounded-md p-2"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-gray-700 mb-2" htmlFor="email">Email</label>
-                          <input 
-                            type="email" 
-                            id="email"
-                            className="w-full border border-gray-300 rounded-md p-2"
-                          />
-                        </div>
-                      </div>
-                      <button 
-                        type="submit"
-                        className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
-                      >
-                        ENVIAR
-                      </button>
-                    </form>
+                    )}
+                    <button className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors" onClick={async ()=> {
+                      if (newRating<=0) return
+                      let res
+                      if (user) {
+                        res = await createReview(productId, { calificacion: newRating, comentario: newComment })
+                        if (!res.ok) return
+                      } else {
+                        const autorNombre = (newAuthorName && newAuthorName.trim().length ? newAuthorName.trim() : 'Invitado')
+                        res = await createReview(productId, { calificacion: newRating, comentario: newComment, autorNombre })
+                        if (!res.ok) return
+                      }
+                      if (res.ok) {
+                        const rv = await listReviews(productId)
+                        if (rv.ok && Array.isArray(rv.data)) {
+                          const avg = rv.data.length ? Math.round(rv.data.reduce((s,it)=> s+(it.calificacion||0),0)/rv.data.length) : 0
+                          setAvgRating(avg)
+                          const enriched2 = await Promise.all(rv.data.map(async (r)=> {
+                            if (!r.autorNombre && r.autorAuthId) {
+                              const n = await fetchAuthorName(r.autorAuthId)
+                              return { ...r, autorNombre: n || null }
+                            }
+                            return r
+                          }))
+                          setReviews(enriched2)
+                          setNewRating(0); setNewComment(''); setNewAuthorName('')
+                        }
+                      }
+                    }}>ENVIAR</button>
                   </div>
                 </div>
               )}
@@ -396,6 +454,20 @@ const ProductDetailPage = () => {
           </div>
         </div>
       </div>
+      <ModalEditarResena
+        open={editingOpen}
+        review={editingReview}
+        onClose={()=> setEditingOpen(false)}
+        onSave={async ({ calificacion, comentario })=>{
+          if (!editingReview) return
+          const up = await updateReview(editingReview.id, { calificacion, comentario })
+          setEditingOpen(false); setEditingReview(null)
+          if (up.ok) {
+            const rv = await listReviews(productId)
+            if (rv.ok) setReviews(rv.data)
+          }
+        }}
+      />
     </div>
   );
 };

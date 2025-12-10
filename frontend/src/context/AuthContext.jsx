@@ -157,11 +157,11 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.removeItem('refreshToken');
   };
 
-  const updateProfile = async ({ nombre, avatarUrl }) => {
+  const updateProfile = async ({ nombre, email, avatarUrl }) => {
     try {
       const token = sessionStorage.getItem('accessToken');
-      const body = JSON.stringify({ nombre, avatarUrl });
-      const { resp, data } = await requestWithTimeoutRetry(`${API_BASE}/auth/autenticacion/perfil`, {
+      const body = JSON.stringify({ nombres: nombre, email, avatarUrl });
+      const { resp, data } = await requestWithTimeoutRetry(`${API_BASE}/users/perfil`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body
@@ -171,10 +171,10 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: msg };
       }
       const nuevo = {
-        email: data?.correo || user?.email,
-        role: data?.rol || user?.role,
-        id: data?.id || user?.id,
-        displayName: data?.nombre || nombre || user?.displayName,
+        email: data?.email || email || user?.email,
+        role: user?.role,
+        id: user?.id,
+        displayName: (data?.nombres || nombre || user?.displayName || '').toString(),
         avatarUrl: data?.avatarUrl ?? avatarUrl ?? user?.avatarUrl
       };
       setUser(nuevo);
@@ -182,6 +182,37 @@ export const AuthProvider = ({ children }) => {
       return { success: true, data };
     } catch (e) {
       return { success: false, error: e?.message || 'Error al actualizar perfil' };
+    }
+  };
+
+  const updateAuthAccount = async ({ nombre, email }) => {
+    setLoading(true);
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const body = JSON.stringify({ nombre, correo: email });
+      const { resp, data } = await requestWithTimeoutRetry(`${API_BASE}/auth/autenticacion/perfil`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body
+      }, 5000, 0);
+      if (!resp.ok) {
+        const msg = data?.mensaje || data?.message || data?.error || 'Error al actualizar cuenta';
+        return { success: false, error: msg };
+      }
+      const nuevo = {
+        email: data?.correo || email || user?.email,
+        role: data?.rol || user?.role,
+        id: data?.id || user?.id,
+        displayName: data?.nombre || nombre || user?.displayName,
+        avatarUrl: data?.avatarUrl ?? user?.avatarUrl ?? null
+      };
+      setUser(nuevo);
+      sessionStorage.setItem('user', JSON.stringify(nuevo));
+      return { success: true, data };
+    } catch (e) {
+      return { success: false, error: e?.message || 'Error al actualizar cuenta' };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -255,6 +286,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateProfile,
+    updateAuthAccount,
     refreshAccessToken
   };
 

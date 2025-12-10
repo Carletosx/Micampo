@@ -1,6 +1,7 @@
 package com.agromarket.orders.controller;
 
 import com.agromarket.orders.domain.Pedido;
+import com.agromarket.orders.domain.HistorialEstado;
 import com.agromarket.orders.dto.*;
 import com.agromarket.orders.service.ServicioPedidos;
 import jakarta.validation.Valid;
@@ -33,6 +34,19 @@ public class ControladorPedidos {
 
   @GetMapping("/{id}/totales")
   public ResponseEntity<Map<String, BigDecimal>> totales(@PathVariable Long id) { return ResponseEntity.ok(servicioPedidos.totales(id)); }
+
+  @GetMapping("/{id}/historial")
+  public ResponseEntity<java.util.List<HistorialEstado>> historial(@PathVariable Long id) { return ResponseEntity.ok(servicioPedidos.historial(id)); }
+
+  @GetMapping("/{id}/items")
+  public ResponseEntity<java.util.List<com.agromarket.orders.domain.ItemPedido>> items(@PathVariable Long id) { return ResponseEntity.ok(servicioPedidos.items(id)); }
+
+  @PutMapping("/{id}/estado")
+  public ResponseEntity<com.agromarket.orders.domain.Pedido> cambiarEstado(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
+    String estado = body.getOrDefault("estado", "");
+    String nota = body.getOrDefault("nota", null);
+    return ResponseEntity.ok(servicioPedidos.cambiarEstado(id, estado, nota));
+  }
 
   @PostMapping("/{id}/items")
   public ResponseEntity<Pedido> agregarItem(@PathVariable Long id, @Valid @RequestBody SolicitudItem req) { return ResponseEntity.ok(servicioPedidos.agregarItem(id, req)); }

@@ -31,6 +31,9 @@ public class ControladorFincas {
   public ResponseEntity<Finca> crear(@RequestHeader(value = "Authorization", required = false) String authorization, @RequestBody FincaDTO dto) {
     Long uid = getUsuarioId(authorization);
     if (uid == null) return ResponseEntity.status(401).build();
+    if (dto.getNombre() == null || dto.getNombre().trim().isEmpty()) throw new IllegalArgumentException("nombre_requerido");
+    if (dto.getUbicacion() == null || dto.getUbicacion().trim().isEmpty()) throw new IllegalArgumentException("ubicacion_requerida");
+    if (dto.getDescripcion() == null || dto.getDescripcion().trim().isEmpty()) throw new IllegalArgumentException("descripcion_requerida");
     return ResponseEntity.ok(servicioUsuarios.crearFinca(uid, dto));
   }
 
@@ -38,6 +41,9 @@ public class ControladorFincas {
   public ResponseEntity<Finca> actualizar(@RequestHeader(value = "Authorization", required = false) String authorization, @PathVariable Long id, @RequestBody FincaDTO dto) {
     Long uid = getUsuarioId(authorization);
     if (uid == null) return ResponseEntity.status(401).build();
+    if (dto.getNombre() == null || dto.getNombre().trim().isEmpty()) throw new IllegalArgumentException("nombre_requerido");
+    if (dto.getUbicacion() == null || dto.getUbicacion().trim().isEmpty()) throw new IllegalArgumentException("ubicacion_requerida");
+    if (dto.getDescripcion() == null || dto.getDescripcion().trim().isEmpty()) throw new IllegalArgumentException("descripcion_requerida");
     return ResponseEntity.ok(servicioUsuarios.actualizarFinca(id, uid, dto));
   }
 

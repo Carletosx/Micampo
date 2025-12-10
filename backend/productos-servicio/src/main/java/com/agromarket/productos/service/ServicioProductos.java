@@ -61,8 +61,8 @@ public class ServicioProductos {
   public Producto obtener(Long id) { return repoProducto.findById(id).orElseThrow(); }
 
   @Transactional
-  public Producto crear(SolicitudCrearProducto req) {
-    Producto p = Producto.builder().nombre(req.getNombre()).descripcion(req.getDescripcion()).precio(req.getPrecio()).stock(req.getStock()).stockMin(req.getStockMin()).categoria(Categoria.valueOf(req.getCategoria())).imagenUrl(req.getImagenUrl()).activo(true).creadoEn(Instant.now()).build();
+  public Producto crear(SolicitudCrearProducto req, Long vendedorAuthId) {
+    Producto p = Producto.builder().nombre(req.getNombre()).descripcion(req.getDescripcion()).precio(req.getPrecio()).stock(req.getStock()).stockMin(req.getStockMin()).categoria(Categoria.valueOf(req.getCategoria())).imagenUrl(req.getImagenUrl()).activo(true).creadoEn(Instant.now()).vendedorAuthId(vendedorAuthId).build();
     Producto saved = repoProducto.save(p);
     ProductoCreadoEvento ev = new ProductoCreadoEvento();
     ev.setProductoId(saved.getId());
@@ -91,6 +91,7 @@ public class ServicioProductos {
 
   @Transactional
   public void eliminar(Long id) {
+    repoDetalle.findByProductoId(id).ifPresent(d -> repoDetalle.deleteById(d.getId()));
     repoProducto.deleteById(id);
   }
 
@@ -117,15 +118,32 @@ public class ServicioProductos {
   }
 
   @Transactional
-  public ProductoDetalle actualizarDetalle(Long productoId, DetalleProductoDTO dto) {
+  public ProductoDetalle actualizarDetalle(Long productoId, DetalleProductoDTO dto, Long authId) {
     ProductoDetalle det = repoDetalle.findByProductoId(productoId).orElseGet(() -> {
       Producto p = obtener(productoId);
       return ProductoDetalle.builder().producto(p).actualizadoEn(Instant.now()).build();
     });
+    if (authId != null) {
+      Producto p = det.getProducto();
+      if (p.getVendedorAuthId() == null) {
+        p.setVendedorAuthId(authId);
+        repoProducto.save(p);
+      }
+    }
     det.setDescripcionLarga(dto.getDescripcionLarga());
     det.setInformacionAdicional(dto.getInformacionAdicional());
     det.setVideoUrl(dto.getVideoUrl());
     det.setActualizadoEn(Instant.now());
     return repoDetalle.save(det);
+  }
+
+  @Transactional
+  public int asignarVendedorAFaltantes(Long authId) {
+    var list = repoProducto.findByVendedorAuthIdIsNull();
+    for (Producto p : list) {
+      p.setVendedorAuthId(authId);
+    }
+    repoProducto.saveAll(list);
+    return list.size();
   }
 }
