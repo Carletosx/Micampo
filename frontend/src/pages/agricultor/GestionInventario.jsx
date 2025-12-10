@@ -253,12 +253,14 @@ const GestionInventario = () => {
         )}
       </div>
 
-      <ModalActualizarStock
-        isOpen={isUpdateOpen}
-        producto={productoSeleccionado || productos[0]}
-        onClose={() => { setIsUpdateOpen(false); setProductoSeleccionado(null); }}
-        onSave={guardarStock}
-      />
+      {productoSeleccionado && (
+        <ModalActualizarStock
+          isOpen={isUpdateOpen}
+          producto={productoSeleccionado}
+          onClose={() => { setIsUpdateOpen(false); setProductoSeleccionado(null); }}
+          onSave={guardarStock}
+        />
+      )}
 
       <ModalExportar
         isOpen={isExportOpen}

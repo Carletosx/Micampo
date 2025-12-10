@@ -61,7 +61,7 @@ spring:
         - id: inventory
           uri: http://localhost:8086
           predicates:
-            - Path=/api/inventory/**
+            - Path=/api/inventario/**
           filters:
             - StripPrefix=2
         - id: notifications

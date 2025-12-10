@@ -9,7 +9,7 @@ const authHeader = () => {
 
 // Crear/inicializar inventario para un producto (con stock inicial)
 export const inicializarInventario = async (productoId, stockInicial = 0, stockMinimo = 0) => {
-  const res = await fetch(`${API_BASE}/inventory/${productoId}`, {
+  const res = await fetch(`${API_BASE}/inventario/${productoId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...authHeader() },
     body: JSON.stringify({ stockActual: stockInicial, stockMinimo })
@@ -20,7 +20,7 @@ export const inicializarInventario = async (productoId, stockInicial = 0, stockM
 
 // Obtener inventario de un producto
 export const getInventario = async (productoId) => {
-  const res = await fetch(`${API_BASE}/inventory/${productoId}`, {
+  const res = await fetch(`${API_BASE}/inventario/${productoId}`, {
     headers: { Accept: 'application/json', ...authHeader() }
   })
   const data = await res.json().catch(() => null)
@@ -29,7 +29,7 @@ export const getInventario = async (productoId) => {
 
 // Actualizar stock y stock mínimo
 export const actualizarInventario = async (productoId, stockActual, stockMinimo) => {
-  const res = await fetch(`${API_BASE}/inventory/${productoId}`, {
+  const res = await fetch(`${API_BASE}/inventario/${productoId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...authHeader() },
     body: JSON.stringify({ stockActual, stockMinimo })
@@ -40,7 +40,7 @@ export const actualizarInventario = async (productoId, stockActual, stockMinimo)
 
 // Listar movimientos de un producto
 export const listarMovimientos = async (productoId) => {
-  const res = await fetch(`${API_BASE}/inventory/${productoId}/movimientos`, {
+  const res = await fetch(`${API_BASE}/inventario/${productoId}/movimientos`, {
     headers: { Accept: 'application/json', ...authHeader() }
   })
   const data = await res.json().catch(() => null)
@@ -49,17 +49,22 @@ export const listarMovimientos = async (productoId) => {
 
 // Crear movimiento (ENTRADA, SALIDA, AJUSTE)
 export const crearMovimiento = async (productoId, movimiento) => {
-  // movimiento puede ser un objeto {tipo, cantidad, descripcion} o parámetros individuales
-  const body = typeof movimiento === 'object' 
-    ? { tipo: movimiento.tipo, cantidad: movimiento.cantidad, nota: movimiento.descripcion || '' }
-    : { tipo: arguments[1], cantidad: arguments[2], nota: arguments[3] || '' }
+  // movimiento es un objeto {tipo, cantidad, descripcion}
+  const body = {
+    tipo: movimiento.tipo,
+    cantidad: Number(movimiento.cantidad),
+    nota: movimiento.descripcion || ''
+  }
   
-  const res = await fetch(`${API_BASE}/inventory/${productoId}/movimientos`, {
+  console.log('📤 Enviando movimiento:', body);
+  
+  const res = await fetch(`${API_BASE}/inventario/${productoId}/movimientos`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeader() },
     body: JSON.stringify(body)
   })
   const data = await res.json().catch(() => null)
+  console.log('📥 Respuesta:', { ok: res.ok, status: res.status, data })
   return { ok: res.ok, unauthorized: res.status === 401, data }
 }
 
@@ -70,7 +75,7 @@ export const reservarStock = async (productoId, data) => {
     ? { cantidad: data.cantidad, nota: data.descripcion || '' }
     : { cantidad: data }
   
-  const res = await fetch(`${API_BASE}/inventory/${productoId}/reservas`, {
+  const res = await fetch(`${API_BASE}/inventario/${productoId}/reservas`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeader() },
     body: JSON.stringify(body)
@@ -81,7 +86,7 @@ export const reservarStock = async (productoId, data) => {
 
 // Liberar stock reservado
 export const liberarStock = async (productoId, cantidad) => {
-  const res = await fetch(`${API_BASE}/inventory/${productoId}/liberaciones`, {
+  const res = await fetch(`${API_BASE}/inventario/${productoId}/liberaciones`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeader() },
     body: JSON.stringify({ cantidad })
@@ -97,7 +102,7 @@ export const confirmarVenta = async (productoId, data) => {
     ? { cantidad: data.cantidad, nota: data.descripcion || '' }
     : { cantidad: data }
   
-  const res = await fetch(`${API_BASE}/inventory/${productoId}/confirmaciones`, {
+  const res = await fetch(`${API_BASE}/inventario/${productoId}/confirmaciones`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeader() },
     body: JSON.stringify(body)
