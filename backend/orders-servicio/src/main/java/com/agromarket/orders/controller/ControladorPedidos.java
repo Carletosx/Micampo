@@ -27,7 +27,19 @@ public class ControladorPedidos {
   public ResponseEntity<Pedido> obtener(@PathVariable Long id) { return ResponseEntity.ok(servicioPedidos.obtener(id)); }
 
   @GetMapping
-  public ResponseEntity<Page<Pedido>> listar(@RequestParam(required = false) Long usuarioAuthId, @RequestParam(required = false) Long agricultorAuthId, @RequestParam(required = false) String estado, @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) { return ResponseEntity.ok(servicioPedidos.listar(usuarioAuthId, agricultorAuthId, estado, page, size)); }
+  public ResponseEntity<java.util.Map<String, Object>> listar(@RequestParam(required = false) Long usuarioAuthId, @RequestParam(required = false) Long agricultorAuthId, @RequestParam(required = false) String estado, @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
+    Page<Pedido> p = servicioPedidos.listar(usuarioAuthId, agricultorAuthId, estado, page, size);
+    java.util.Map<String, Object> res = new java.util.HashMap<>();
+    res.put("content", p.getContent());
+    res.put("page", p.getNumber());
+    res.put("size", p.getSize());
+    res.put("totalElements", p.getTotalElements());
+    res.put("totalPages", p.getTotalPages());
+    res.put("numberOfElements", p.getNumberOfElements());
+    res.put("first", p.isFirst());
+    res.put("last", p.isLast());
+    return ResponseEntity.ok(res);
+  }
 
   @PutMapping("/{id}/estado")
   public ResponseEntity<Pedido> cambiarEstado(@PathVariable Long id, @Valid @RequestBody SolicitudCambioEstado req) { return ResponseEntity.ok(servicioPedidos.cambiarEstado(id, req.getEstado(), req.getNota())); }
@@ -40,13 +52,6 @@ public class ControladorPedidos {
 
   @GetMapping("/{id}/items")
   public ResponseEntity<java.util.List<com.agromarket.orders.domain.ItemPedido>> items(@PathVariable Long id) { return ResponseEntity.ok(servicioPedidos.items(id)); }
-
-  @PutMapping("/{id}/estado")
-  public ResponseEntity<com.agromarket.orders.domain.Pedido> cambiarEstado(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
-    String estado = body.getOrDefault("estado", "");
-    String nota = body.getOrDefault("nota", null);
-    return ResponseEntity.ok(servicioPedidos.cambiarEstado(id, estado, nota));
-  }
 
   @PostMapping("/{id}/items")
   public ResponseEntity<Pedido> agregarItem(@PathVariable Long id, @Valid @RequestBody SolicitudItem req) { return ResponseEntity.ok(servicioPedidos.agregarItem(id, req)); }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react'
 import NavbarAgricultor from '../../components/layout/NavbarAgricultor'
 import { AuthContext } from '../../context/AuthContext'
-import { listOrdersByUser, getOrderItems } from '../../api/orders.js'
+import { listOrdersByUser, listOrdersByAgricultor, getOrderItems } from '../../api/orders.js'
 
 const accionesPorEstado = {
   PENDIENTE: [{ k: 'CONFIRMADO', label: 'Confirmar' }, { k: 'CANCELADO', label: 'Cancelar' }],
@@ -18,8 +18,22 @@ const PedidosAgricultor = () => {
   useEffect(() => {
     const load = async () => {
       setLoading(true)
-      const r = await listOrdersByUser(undefined)
-      if (r.ok) setOrders(r.data.filter(o => o.agricultorAuthId === (user?.id || o.agricultorAuthId)))
+      let r
+      if (user?.id) {
+        const ra = await listOrdersByAgricultor(user.id)
+        console.log('listOrdersByAgricultor:', ra)
+        if (ra.ok && Array.isArray(ra.data) && ra.data.length > 0) {
+          setOrders(ra.data)
+        } else {
+          const ru = await listOrdersByUser(undefined)
+          console.log('fallback listOrdersByUser:', ru)
+          setOrders(ru.ok && Array.isArray(ru.data) ? ru.data : [])
+        }
+      } else {
+        const ru = await listOrdersByUser(undefined)
+        console.log('listOrders (sin id agricultor):', ru)
+        setOrders(ru.ok && Array.isArray(ru.data) ? ru.data : [])
+      }
       setLoading(false)
     }
     load()
@@ -44,7 +58,11 @@ const PedidosAgricultor = () => {
       <NavbarAgricultor />
       <main className="max-w-6xl mx-auto px-4 py-6">
         <h1 className="text-xl font-semibold text-gray-800 mb-4">Pedidos de mis productos</h1>
-        {loading ? (<div className="text-gray-600">Cargando...</div>) : (
+        {loading ? (
+          <div className="text-gray-600">Cargando...</div>
+        ) : orders.length === 0 ? (
+          <div className="bg-white rounded-md border border-gray-200 p-6 text-center text-gray-600">No hay pedidos para mostrar.</div>
+        ) : (
           <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-700">

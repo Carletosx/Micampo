@@ -43,6 +43,20 @@ export const listOrdersByUser = async (usuarioAuthId) => {
   return { ok: res.ok, status: res.status, data: items }
 }
 
+export const listOrdersByAgricultor = async (agricultorAuthId, opts = {}) => {
+  const params = new URLSearchParams()
+  if (agricultorAuthId) params.set('agricultorAuthId', agricultorAuthId)
+  if (opts.estado) params.set('estado', opts.estado)
+  if (opts.page != null) params.set('page', String(opts.page))
+  if (opts.size != null) params.set('size', String(opts.size))
+  const qs = params.toString() ? `?${params.toString()}` : ''
+  let res = await fetch(`${API_BASE}/orders${qs}`, { headers: { Accept: 'application/json', ...authHeader() } })
+  let data = await res.json().catch(() => null)
+  if (res.status === 401 && (await tryRefresh())) { res = await fetch(`${API_BASE}/orders${qs}`, { headers: { Accept: 'application/json', ...authHeader() } }); data = await res.json().catch(() => null) }
+  const items = data && data.content ? data.content : []
+  return { ok: res.ok, status: res.status, data: items }
+}
+
 export const getOrder = async (id) => {
   let res = await fetch(`${API_BASE}/orders/${id}`, { headers: { Accept: 'application/json', ...authHeader() } })
   let data = await res.json().catch(() => null)
@@ -71,4 +85,4 @@ export const getOrderItems = async (id) => {
   return { ok: res.ok, status: res.status, data }
 }
 
-export default { createOrder, listOrdersByUser, getOrder, getOrderTotals, getOrderHistory, getOrderItems }
+export default { createOrder, listOrdersByUser, listOrdersByAgricultor, getOrder, getOrderTotals, getOrderHistory, getOrderItems }
