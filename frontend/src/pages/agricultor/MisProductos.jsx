@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import ROUTES from '../../routes/paths.js';
 import NavbarAgricultor from '../../components/layout/NavbarAgricultor.jsx';
 import EncabezadoProductos from '../../components/productos/EncabezadoProductos.jsx';
@@ -64,7 +64,15 @@ export default function MisProductos() {
     setLoading(false);
   };
 
+  const [searchParams] = useSearchParams();
   useEffect(() => { cargarPagina(0); }, []);
+  useEffect(() => {
+    const editId = Number(searchParams.get('editId') || 0)
+    if (editId && productos.length > 0) {
+      const p = productos.find(x => Number(x.id) === editId)
+      if (p) abrirEditar(p)
+    }
+  }, [searchParams, productos])
 
   const esStockBajo = (p) => p.stockMin > 0 && p.stock <= p.stockMin;
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { API_ORIGIN } from '../../api/config.js';
 import { FaPencilAlt, FaSync, FaEye, FaFileAlt, FaLock, FaCheck } from 'react-icons/fa';
 
 const BadgeEstado = ({ estado }) => {
@@ -33,10 +34,21 @@ const FilasProductoInventario = ({
   const stockActual = producto.stockActual || 0;
   const stockMinimo = producto.stockMinimo || 0;
   
+  const resolveImage = (p) => {
+    const im = p.imagenUrl || p.imagen_url || p.imagen || ''
+    if (!im) return ''
+    if (im.startsWith('/uploads/')) return `${API_ORIGIN}${im}`
+    return im
+  }
+  const imgSrc = resolveImage(producto)
   return (
     <tr className={`hover:bg-gray-50 ${rowHighlight}`}>
       <td className="px-3 py-2">
-        <img src={producto.imagen || producto.imagenUrl} alt={producto.nombre} className="w-10 h-10 rounded object-cover border" />
+        {imgSrc ? (
+          <img src={imgSrc} alt={producto.nombre} className="w-10 h-10 rounded object-cover border" />
+        ) : (
+          <div className="w-10 h-10 rounded border bg-gray-100" />
+        )}
       </td>
       <td className="px-3 py-2 text-sm text-gray-800">{producto.nombre}</td>
       <td className="px-3 py-2 text-sm text-gray-600">{producto.categoria}</td>

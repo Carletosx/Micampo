@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import NavbarAgricultor from '../../components/layout/NavbarAgricultor';
 import EncabezadoInventario from '../../components/inventario/EncabezadoInventario';
 import AlertaStockCritico from '../../components/inventario/AlertaStockCritico';
@@ -12,6 +13,7 @@ import ModalConfirmarVenta from '../../components/inventario/ModalConfirmarVenta
 import { listProducts } from '../../api/products';
 import { getInventario, actualizarInventario } from '../../api/inventory';
 import { NotificationContext } from '../../contexts/NotificationContext';
+import ModalVerProducto from '../../components/inventario/ModalVerProducto';
 
 const GestionInventario = () => {
   const [productos, setProductos] = useState([]);
@@ -22,8 +24,10 @@ const GestionInventario = () => {
   const [isMovimientoOpen, setIsMovimientoOpen] = useState(false);
   const [isReservaOpen, setIsReservaOpen] = useState(false);
   const [isConfirmacionOpen, setIsConfirmacionOpen] = useState(false);
+  const [isVerOpen, setIsVerOpen] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
   const { showSuccess, showError } = useContext(NotificationContext) || { showSuccess: () => {}, showError: () => {} };
+  const navigate = useNavigate();
 
   // Cargar productos y sus inventarios
   useEffect(() => {
@@ -128,6 +132,16 @@ const GestionInventario = () => {
   const abrirConfirmarVenta = (producto) => {
     setProductoSeleccionado(producto);
     setIsConfirmacionOpen(true);
+  };
+
+  const abrirDetalles = (producto) => {
+    setProductoSeleccionado(producto);
+    setIsVerOpen(true);
+  };
+
+  const editarProducto = (producto) => {
+    if (producto?.id != null) navigate(`/agricultor/productos?editId=${producto.id}`);
+    else navigate('/agricultor/productos');
   };
 
   const recargarProductos = async () => {
@@ -235,9 +249,9 @@ const GestionInventario = () => {
 
             <TablaInventario
               productos={productos}
-              onEditarProducto={(p) => console.log('Editar', p)}
+              onEditarProducto={(p) => editarProducto(p)}
               onActualizarStock={(p) => abrirActualizarStock(p)}
-              onVerDetalles={(p) => console.log('Ver detalles', p)}
+              onVerDetalles={(p) => abrirDetalles(p)}
               onCrearMovimiento={(p) => abrirCrearMovimiento(p)}
               onReservarStock={(p) => abrirReservarStock(p)}
               onConfirmarVenta={(p) => abrirConfirmarVenta(p)}
@@ -287,6 +301,12 @@ const GestionInventario = () => {
         producto={productoSeleccionado}
         onClose={() => { setIsConfirmacionOpen(false); setProductoSeleccionado(null); }}
         onSave={recargarProductos}
+      />
+
+      <ModalVerProducto
+        isOpen={isVerOpen}
+        producto={productoSeleccionado}
+        onClose={() => { setIsVerOpen(false); setProductoSeleccionado(null); }}
       />
     </div>
   );
