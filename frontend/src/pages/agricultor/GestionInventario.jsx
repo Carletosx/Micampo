@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useContext } from 'react';
 import NavbarAgricultor from '../../components/layout/NavbarAgricultor';
 import EncabezadoInventario from '../../components/inventario/EncabezadoInventario';
 import AlertaStockCritico from '../../components/inventario/AlertaStockCritico';
@@ -6,27 +6,73 @@ import TarjetasResumenInventario from '../../components/inventario/TarjetasResum
 import TablaInventario from '../../components/inventario/TablaInventario';
 import ModalActualizarStock from '../../components/inventario/ModalActualizarStock';
 import ModalExportar from '../../components/inventario/ModalExportar';
-
-const mockProductosInicial = [
-  { id: 1, nombre: 'Papa Blanca', categoria: 'Tubérculos', unidad: 'kg', stockActual: 120, stockMinimo: 50, precioUnitario: 2.2, imagen: 'https://images.unsplash.com/photo-1519999482648-25049ddd37b1?w=200&q=80' },
-  { id: 2, nombre: 'Tomates Cherry', categoria: 'Frutas', unidad: 'kg', stockActual: 18, stockMinimo: 20, precioUnitario: 6.5, imagen: 'https://images.unsplash.com/photo-1546554137-5e6f2b0b75a4?w=200&q=80' },
-  { id: 3, nombre: 'Lechuga Orgánica', categoria: 'Hortalizas', unidad: 'unidades', stockActual: 40, stockMinimo: 30, precioUnitario: 1.8, imagen: 'https://images.unsplash.com/photo-1447175008436-054170c2e979?w=200&q=80' },
-  { id: 4, nombre: 'Zanahoria', categoria: 'Hortalizas', unidad: 'kg', stockActual: 22, stockMinimo: 25, precioUnitario: 3.0, imagen: 'https://images.unsplash.com/photo-1506806732259-39c2d0268443?w=200&q=80' },
-  { id: 5, nombre: 'Cebolla Roja', categoria: 'Hortalizas', unidad: 'kg', stockActual: 8, stockMinimo: 15, precioUnitario: 2.6, imagen: 'https://images.unsplash.com/photo-1604908176750-6a9b1f909b44?w=200&q=80' },
-  { id: 6, nombre: 'Maíz Choclo', categoria: 'Granos', unidad: 'unidades', stockActual: 60, stockMinimo: 30, precioUnitario: 1.5, imagen: 'https://images.unsplash.com/photo-1506806732259-39c2d0268443?w=200&q=80' },
-  { id: 7, nombre: 'Palta Hass', categoria: 'Frutas', unidad: 'kg', stockActual: 12, stockMinimo: 20, precioUnitario: 10.0, imagen: 'https://images.unsplash.com/photo-1604881991331-7d3f4f5e30b9?w=200&q=80' },
-  { id: 8, nombre: 'Fresas', categoria: 'Frutas', unidad: 'kg', stockActual: 28, stockMinimo: 15, precioUnitario: 9.2, imagen: 'https://images.unsplash.com/photo-1439127989242-c492f64f098e?w=200&q=80' },
-  { id: 9, nombre: 'Quinua', categoria: 'Granos', unidad: 'kg', stockActual: 55, stockMinimo: 20, precioUnitario: 7.0, imagen: 'https://images.unsplash.com/photo-1518674660708-3e6b8b3f4d0e?w=200&q=80' },
-  { id: 10, nombre: 'Arveja', categoria: 'Legumbres', unidad: 'kg', stockActual: 18, stockMinimo: 18, precioUnitario: 5.0, imagen: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=200&q=80' },
-  { id: 11, nombre: 'Brócoli', categoria: 'Hortalizas', unidad: 'unidades', stockActual: 10, stockMinimo: 15, precioUnitario: 2.4, imagen: 'https://images.unsplash.com/photo-1598039013163-0f4bfa2d19f7?w=200&q=80' },
-  { id: 12, nombre: 'Manzana Roja', categoria: 'Frutas', unidad: 'kg', stockActual: 75, stockMinimo: 30, precioUnitario: 6.0, imagen: 'https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=200&q=80' },
-];
+import ModalCrearMovimiento from '../../components/inventario/ModalCrearMovimiento';
+import ModalReservarStock from '../../components/inventario/ModalReservarStock';
+import ModalConfirmarVenta from '../../components/inventario/ModalConfirmarVenta';
+import { listProducts } from '../../api/products';
+import { getInventario, actualizarInventario } from '../../api/inventory';
+import { NotificationContext } from '../../contexts/NotificationContext';
 
 const GestionInventario = () => {
-  const [productos, setProductos] = useState(mockProductosInicial);
+  const [productos, setProductos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isUpdateOpen, setIsUpdateOpen] = useState(false);
+  const [isMovimientoOpen, setIsMovimientoOpen] = useState(false);
+  const [isReservaOpen, setIsReservaOpen] = useState(false);
+  const [isConfirmacionOpen, setIsConfirmacionOpen] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
+  const { showSuccess, showError } = useContext(NotificationContext) || { showSuccess: () => {}, showError: () => {} };
+
+  // Cargar productos y sus inventarios
+  useEffect(() => {
+    const cargarProductos = async () => {
+      setLoading(true);
+      try {
+        const result = await listProducts({ size: 100 });
+        if (result.ok && result.data) {
+          // Para cada producto, obtener su inventario
+          const productosConInventario = await Promise.all(
+            result.data.map(async (producto) => {
+              try {
+                const invResult = await getInventario(producto.id);
+                if (invResult.ok && invResult.data) {
+                  // Si existe inventario en BD, usar esos valores exactos
+                  return {
+                    ...producto,
+                    stockActual: invResult.data.stockActual || 0,
+                    stockMinimo: invResult.data.stockMinimo || 0,
+                    stockReservado: invResult.data.stockReservado || 0,
+                  };
+                }
+              } catch (e) {
+                console.log(`No hay inventario para producto ${producto.id}`);
+              }
+             
+              return {
+                ...producto,
+                stockActual: producto.stock || 0,
+                stockMinimo: producto.stockMin || 0, // usamos el stockmin del producto
+                stockReservado: 0,
+              };
+            })
+          );
+          setProductos(productosConInventario);
+          setError(null);
+        } else {
+          setError('No se pudo cargar los productos');
+          showError('Error al cargar productos');
+        }
+      } catch (err) {
+        setError(err.message);
+        showError('Error de conexión');
+      } finally {
+        setLoading(false);
+      }
+    };
+    cargarProductos();
+  }, []);
 
   const resumen = useMemo(() => {
     const productosCount = productos.length;
@@ -35,23 +81,114 @@ const GestionInventario = () => {
       return p.stockActual > p.stockMinimo && p.stockActual <= p.stockMinimo + margen;
     }).length;
     const stockCritico = productos.filter(p => p.stockActual <= p.stockMinimo).length;
-    const valorTotal = productos.reduce((acc, p) => acc + p.stockActual * p.precioUnitario, 0);
+    const precio = (p) => p.precio || p.precioUnitario || 0;
+    const valorTotal = productos.reduce((acc, p) => acc + p.stockActual * precio(p), 0);
     return { productosCount, stockBajo, stockCritico, valorTotal };
   }, [productos]);
+
+  const guardarStock = async (productoActualizado) => {
+    try {
+      const result = await actualizarInventario(
+        productoActualizado.id,
+        productoActualizado.stockActual,
+        productoActualizado.stockMinimo
+      );
+      
+      if (result.ok) {
+        showSuccess('Stock actualizado correctamente');
+        await recargarProductos();
+      } else if (result.unauthorized) {
+        showError('Sesión expirada. Por favor, inicia sesión nuevamente');
+      } else {
+        showError('Error al actualizar el stock');
+      }
+    } catch (err) {
+      showError('Error de conexión');
+    } finally {
+      setIsUpdateOpen(false);
+      setProductoSeleccionado(null);
+    }
+  };
 
   const abrirActualizarStock = (producto) => {
     setProductoSeleccionado(producto);
     setIsUpdateOpen(true);
   };
 
-  const guardarStock = (productoActualizado) => {
-    setProductos(prev => prev.map(p => p.id === productoActualizado.id ? productoActualizado : p));
-    setIsUpdateOpen(false);
-    setProductoSeleccionado(null);
+  const abrirCrearMovimiento = (producto) => {
+    setProductoSeleccionado(producto);
+    setIsMovimientoOpen(true);
+  };
+
+  const abrirReservarStock = (producto) => {
+    setProductoSeleccionado(producto);
+    setIsReservaOpen(true);
+  };
+
+  const abrirConfirmarVenta = (producto) => {
+    setProductoSeleccionado(producto);
+    setIsConfirmacionOpen(true);
+  };
+
+  const recargarProductos = async () => {
+    const result = await listProducts({ size: 100 });
+    if (result.ok && result.data) {
+      const productosConInventario = await Promise.all(
+        result.data.map(async (producto) => {
+          try {
+            const invResult = await getInventario(producto.id);
+            if (invResult.ok && invResult.data) {
+              return {
+                ...producto,
+                stockActual: invResult.data.stockActual || 0,
+                stockMinimo: invResult.data.stockMinimo || 0,
+                stockReservado: invResult.data.stockReservado || 0,
+              };
+            }
+          } catch (e) {
+            console.log(`No hay inventario para producto ${producto.id}`);
+          }
+          return {
+            ...producto,
+            stockActual: producto.stock || 0,
+            stockMinimo: producto.stockMin || 0,
+            stockReservado: 0,
+          };
+        })
+      );
+      setProductos(productosConInventario);
+    }
   };
 
   const exportarInventario = (formato) => {
-    console.log('Exportar en formato:', formato);
+    if (productos.length === 0) {
+      showError('No hay productos para exportar');
+      return;
+    }
+    
+    let contenido = '';
+    if (formato === 'csv') {
+      contenido = 'Nombre,Categoría,Stock Actual,Stock Mínimo,Precio Unitario,Valor Total\n';
+      productos.forEach(p => {
+        const precio = p.precio || p.precioUnitario || 0;
+        const valorTotal = p.stockActual * precio;
+        contenido += `"${p.nombre}","${p.categoria}",${p.stockActual},${p.stockMinimo},${precio},${valorTotal}\n`;
+      });
+    } else if (formato === 'json') {
+      contenido = JSON.stringify(productos, null, 2);
+    }
+    
+    const blob = new Blob([contenido], { type: formato === 'csv' ? 'text/csv' : 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `inventario.${formato}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showSuccess(`Inventario exportado en formato ${formato.toUpperCase()}`);
     setIsExportOpen(false);
   };
 
@@ -62,45 +199,94 @@ const GestionInventario = () => {
       <div className="max-w-7xl mx-auto px-4 py-6">
         <EncabezadoInventario
           onExport={() => setIsExportOpen(true)}
-          onActualizarStock={() => setIsUpdateOpen(true)}
+          onActualizarStock={() => {}}
         />
 
-        <div className="mb-4">
-          <AlertaStockCritico
-            texto={`${resumen.stockCritico} productos requieren atención inmediata`}
-            subtexto="Tienes productos con stock crítico que necesitan reposición"
-            onVerAlertas={() => {}}
-          />
-        </div>
+        {loading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="text-gray-600">Cargando inventario...</div>
+          </div>
+        )}
 
-        <div className="mb-4">
-          <TarjetasResumenInventario
-            productos={resumen.productosCount}
-            stockBajo={resumen.stockBajo}
-            stockCritico={resumen.stockCritico}
-            valorTotal={Math.round(resumen.valorTotal)}
-          />
-        </div>
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
 
-        <TablaInventario
-          productos={productos}
-          onEditarProducto={(p) => console.log('Editar', p)}
-          onActualizarStock={(p) => abrirActualizarStock(p)}
-          onVerDetalles={(p) => console.log('Ver detalles', p)}
-        />
+        {!loading && productos.length > 0 && (
+          <>
+            <div className="mb-4">
+              <AlertaStockCritico
+                texto={`${resumen.stockCritico} productos requieren atención inmediata`}
+                subtexto="Tienes productos con stock crítico que necesitan reposición"
+                onVerAlertas={() => {}}
+              />
+            </div>
+
+            <div className="mb-4">
+              <TarjetasResumenInventario
+                productos={resumen.productosCount}
+                stockBajo={resumen.stockBajo}
+                stockCritico={resumen.stockCritico}
+                valorTotal={Math.round(resumen.valorTotal)}
+              />
+            </div>
+
+            <TablaInventario
+              productos={productos}
+              onEditarProducto={(p) => console.log('Editar', p)}
+              onActualizarStock={(p) => abrirActualizarStock(p)}
+              onVerDetalles={(p) => console.log('Ver detalles', p)}
+              onCrearMovimiento={(p) => abrirCrearMovimiento(p)}
+              onReservarStock={(p) => abrirReservarStock(p)}
+              onConfirmarVenta={(p) => abrirConfirmarVenta(p)}
+            />
+          </>
+        )}
+
+        {!loading && productos.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-600 text-lg">No tienes productos creados aún</p>
+            <p className="text-gray-400 mt-2">Crea un producto primero para gestionar su inventario</p>
+          </div>
+        )}
       </div>
 
-      <ModalActualizarStock
-        isOpen={isUpdateOpen}
-        producto={productoSeleccionado || productos[0]}
-        onClose={() => { setIsUpdateOpen(false); setProductoSeleccionado(null); }}
-        onSave={guardarStock}
-      />
+      {productoSeleccionado && (
+        <ModalActualizarStock
+          isOpen={isUpdateOpen}
+          producto={productoSeleccionado}
+          onClose={() => { setIsUpdateOpen(false); setProductoSeleccionado(null); }}
+          onSave={guardarStock}
+        />
+      )}
 
       <ModalExportar
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
         onExport={exportarInventario}
+      />
+
+      <ModalCrearMovimiento
+        isOpen={isMovimientoOpen}
+        producto={productoSeleccionado}
+        onClose={() => { setIsMovimientoOpen(false); setProductoSeleccionado(null); }}
+        onSave={recargarProductos}
+      />
+
+      <ModalReservarStock
+        isOpen={isReservaOpen}
+        producto={productoSeleccionado}
+        onClose={() => { setIsReservaOpen(false); setProductoSeleccionado(null); }}
+        onSave={recargarProductos}
+      />
+
+      <ModalConfirmarVenta
+        isOpen={isConfirmacionOpen}
+        producto={productoSeleccionado}
+        onClose={() => { setIsConfirmacionOpen(false); setProductoSeleccionado(null); }}
+        onSave={recargarProductos}
       />
     </div>
   );

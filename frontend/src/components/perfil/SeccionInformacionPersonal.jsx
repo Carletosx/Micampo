@@ -70,12 +70,11 @@ const SeccionInformacionPersonal = () => {
 
   const [saving, setSaving] = useState(false)
   const handleSave = async () => {
-    const payload = { nombres: nombresRef.current?.value || '', apellidos: apellidosRef.current?.value || '', telefono: telefonoRef.current?.value || '', dni: dniRef.current?.value || '' }
-    setErrors({})
-    if (!payload.nombres.trim() || !payload.apellidos.trim() || !payload.telefono.trim() || !payload.dni.trim()) { showError('Revisa los campos marcados.'); return }
-    setSaving(true)
-    const { ok, unauthorized } = await updatePerfil(payload)
-    setSaving(false)
+    if (!validate()) { showError('Revisa los campos marcados.'); return; }
+    const confirmed = window.confirm('¿Confirmas guardar los cambios de Información Personal?');
+    if (!confirmed) return;
+    const payload = { nombres: form.nombres, apellidos: form.apellidos, email: form.email, telefono: form.telefono, dni: form.dni };
+    const { ok, unauthorized } = await updatePerfil(payload);
     if (unauthorized) { showError('Tu sesión expiró. Inicia nuevamente.'); return }
     if (ok) { setEditing(false); showSuccess('Información personal actualizada.') } else { showError('Error al actualizar perfil') }
   }

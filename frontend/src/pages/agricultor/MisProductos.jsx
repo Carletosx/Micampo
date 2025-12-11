@@ -11,6 +11,7 @@ import ModalEliminarProducto from '../../components/productos/ModalEliminarProdu
 import ModalDetalleProducto from '../../components/productos/ModalDetalleProducto.jsx';
 import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
 import { listProducts, createProduct, updateProduct, deleteProduct, pauseProduct, activateProduct } from '../../api/products.js';
+import { inicializarInventario } from '../../api/inventory.js';
 import { NotificationContext } from '../../contexts/NotificationContext';
 
 const mockProductosInicial = [
@@ -124,6 +125,21 @@ export default function MisProductos() {
         navigate(ROUTES.LOGIN);
       } else if (ok) {
         const nuevo = data || { id: Date.now(), ...payload };
+        
+        // Inicializar inventario automáticamente con los valores del producto
+        const stockInicial = Number(payload.stock) || 0;
+        let stockMinimo = Number(payload.stockMin) || 0;
+        
+        // Si no ingresó stockMin, calcular 20% del stock
+        if (stockMinimo === 0 || isNaN(stockMinimo)) {
+          stockMinimo = Math.max(Math.ceil(stockInicial * 0.2), 5);
+        }
+        
+        const invResult = await inicializarInventario(nuevo.id, stockInicial, stockMinimo);
+        if (!invResult.ok) {
+          addNotification('Producto creado pero no se pudo inicializar el inventario', 'warning');
+        }
+        
         setProductos((prev) => [nuevo, ...prev]);
         addNotification('Producto creado', 'success');
       } else addNotification('No se pudo crear el producto', 'error');

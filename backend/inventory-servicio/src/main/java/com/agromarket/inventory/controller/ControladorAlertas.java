@@ -3,11 +3,13 @@ package com.agromarket.inventory.controller;
 import com.agromarket.inventory.domain.AlertaInventario;
 import com.agromarket.inventory.repository.RepositorioAlertaInventario;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
 @RequestMapping("/inventario/{productoId}/alertas")
+@PreAuthorize("hasRole('AGRICULTOR')")
 public class ControladorAlertas {
   private final RepositorioAlertaInventario repo;
   public ControladorAlertas(RepositorioAlertaInventario repo) { this.repo = repo; }
