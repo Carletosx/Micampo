@@ -17,8 +17,9 @@ public class Agricultor {
   @Column(nullable = false, unique = true)
   private Long authUsuarioId;
   private String nombre;
+  @Column(name = "tienda_nombre")
+  private String tiendaNombre;
   private String telefono;
   private Double calificacion;
   private Integer ventas;
 }
-

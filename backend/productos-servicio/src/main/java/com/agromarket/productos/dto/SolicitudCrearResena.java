@@ -13,7 +13,6 @@ public class SolicitudCrearResena {
   private Integer calificacion;
   @Size(max = 500)
   private String comentario;
-  @NotNull
   private Long autorAuthId;
+  private String autorNombre;
 }
-

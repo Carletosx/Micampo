@@ -51,3 +51,9 @@ export const getProduct = async (id) => {
   const data = await res.json().catch(() => null)
   return { ok: res.ok, unauthorized: res.status === 401, data }
 }
+
+export const assignMissingVendor = async () => {
+  const res = await fetch(`${API_BASE}/products/vendedor/assign-missing`, { method: 'PATCH', headers: { Accept: 'application/json', ...authHeader() } })
+  const data = await res.json().catch(() => null)
+  return { ok: res.ok, unauthorized: res.status === 401, data }
+}

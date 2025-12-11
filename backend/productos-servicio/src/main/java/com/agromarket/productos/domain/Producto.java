@@ -34,4 +34,7 @@ public class Producto {
   private Boolean activo;
   @Column(nullable = false)
   private Instant creadoEn;
+
+  @Column(name = "vendedor_auth_id")
+  private Long vendedorAuthId;
 }

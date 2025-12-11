@@ -6,8 +6,10 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 @Configuration
+@ConditionalOnProperty(name = "eventos.habilitados", havingValue = "true")
 public class ConfiguracionRabbitMQ {
   @Bean
   public TopicExchange intercambioOrden() { return new TopicExchange(EventosConfig.EXCHANGE_ORDEN); }
@@ -24,4 +26,3 @@ public class ConfiguracionRabbitMQ {
   @Bean
   public MessageConverter convertidorMensaje() { return new Jackson2JsonMessageConverter(); }
 }
-

@@ -17,5 +17,5 @@ public class ControladorDetallesProducto {
   public ResponseEntity<ProductoDetalle> obtener(@PathVariable Long id) { return ResponseEntity.ok(servicioProductos.obtenerDetalle(id)); }
 
   @PutMapping("/{id}/detalle")
-  public ResponseEntity<ProductoDetalle> actualizar(@PathVariable Long id, @Valid @RequestBody DetalleProductoDTO dto) { return ResponseEntity.ok(servicioProductos.actualizarDetalle(id, dto)); }
+  public ResponseEntity<ProductoDetalle> actualizar(@RequestHeader(value = "X-Auth-Id", required = false) Long authId, @PathVariable Long id, @Valid @RequestBody DetalleProductoDTO dto) { return ResponseEntity.ok(servicioProductos.actualizarDetalle(id, dto, authId)); }
 }

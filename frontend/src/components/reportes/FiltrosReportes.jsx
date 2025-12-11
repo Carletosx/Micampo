@@ -2,6 +2,7 @@ import React from 'react';
 import { FaBroom } from 'react-icons/fa';
 
 const periodOptions = [
+  { value: 'hoy', label: 'Hoy' },
   { value: '30d', label: 'Últimos 30 días' },
   { value: '7d', label: 'Últimos 7 días' },
   { value: 'mes', label: 'Este mes' },

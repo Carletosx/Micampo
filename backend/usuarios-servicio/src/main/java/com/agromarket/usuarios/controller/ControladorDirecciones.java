@@ -18,6 +18,9 @@ public class ControladorDirecciones {
   @GetMapping
   public ResponseEntity<List<Direccion>> listar(@PathVariable Long authUsuarioId) { return ResponseEntity.ok(servicioDirecciones.listar(authUsuarioId)); }
 
+  @GetMapping("/{id}")
+  public ResponseEntity<Direccion> obtener(@PathVariable Long authUsuarioId, @PathVariable Long id) { return ResponseEntity.ok(servicioDirecciones.obtener(authUsuarioId, id)); }
+
   @PostMapping
   public ResponseEntity<Direccion> crear(@PathVariable Long authUsuarioId, @Valid @RequestBody SolicitudCrearDireccion req) {
     Direccion d = Direccion.builder().tipo(com.agromarket.usuarios.domain.TipoDireccion.valueOf(req.getTipo())).linea1(req.getLinea1()).linea2(req.getLinea2()).distrito(req.getDistrito()).provincia(req.getProvincia()).departamento(req.getDepartamento()).referencia(req.getReferencia()).latitud(req.getLatitud()).longitud(req.getLongitud()).build();

@@ -1,9 +1,7 @@
 package com.agromarket.usuarios.controller;
 
 import com.agromarket.usuarios.domain.Agricultor;
-import com.agromarket.usuarios.domain.FincaInfo;
 import com.agromarket.usuarios.dto.SolicitudActualizarAgricultor;
-import com.agromarket.usuarios.dto.SolicitudActualizarFinca;
 import com.agromarket.usuarios.service.ServicioPerfiles;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -23,10 +21,4 @@ public class ControladorAgricultores {
 
   @PutMapping("/{id}")
   public ResponseEntity<Agricultor> actualizar(@PathVariable Long id, @Valid @RequestBody SolicitudActualizarAgricultor req) { return ResponseEntity.ok(servicioPerfiles.actualizarAgricultor(id, req.getNombre(), req.getTelefono())); }
-
-  @GetMapping("/{id}/finca")
-  public ResponseEntity<FincaInfo> obtenerFinca(@PathVariable Long id) { return ResponseEntity.ok(servicioPerfiles.obtenerFinca(id)); }
-
-  @PutMapping("/{id}/finca")
-  public ResponseEntity<FincaInfo> actualizarFinca(@PathVariable Long id, @Valid @RequestBody SolicitudActualizarFinca req) { return ResponseEntity.ok(servicioPerfiles.actualizarFinca(id, req.getNombre(), req.getUbicacion(), req.getDescripcion())); }
 }

@@ -2,11 +2,9 @@ package com.agromarket.usuarios.service;
 
 import com.agromarket.usuarios.domain.Agricultor;
 import com.agromarket.usuarios.domain.Comprador;
-import com.agromarket.usuarios.domain.FincaInfo;
 import com.agromarket.usuarios.events.UsuarioRegistradoEvento;
 import com.agromarket.usuarios.repository.RepositorioAgricultor;
 import com.agromarket.usuarios.repository.RepositorioComprador;
-import com.agromarket.usuarios.repository.RepositorioFincaInfo;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,12 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class ServicioPerfiles {
   private final RepositorioAgricultor repoAgricultor;
   private final RepositorioComprador repoComprador;
-  private final RepositorioFincaInfo repoFinca;
 
-  public ServicioPerfiles(RepositorioAgricultor repoAgricultor, RepositorioComprador repoComprador, RepositorioFincaInfo repoFinca) {
+  public ServicioPerfiles(RepositorioAgricultor repoAgricultor, RepositorioComprador repoComprador) {
     this.repoAgricultor = repoAgricultor;
     this.repoComprador = repoComprador;
-    this.repoFinca = repoFinca;
   }
 
   @Transactional
@@ -38,15 +34,6 @@ public class ServicioPerfiles {
     a.setNombre(nombre);
     a.setTelefono(telefono);
     return repoAgricultor.save(a);
-  }
-
-  public FincaInfo obtenerFinca(Long agricultorId) { return repoFinca.findByAgricultorId(agricultorId).orElse(null); }
-  public FincaInfo actualizarFinca(Long agricultorId, String nombre, String ubicacion, String descripcion) {
-    FincaInfo f = repoFinca.findByAgricultorId(agricultorId).orElseGet(() -> FincaInfo.builder().agricultorId(agricultorId).build());
-    f.setNombre(nombre);
-    f.setUbicacion(ubicacion);
-    f.setDescripcion(descripcion);
-    return repoFinca.save(f);
   }
 
   public Comprador obtenerComprador(Long id) { return repoComprador.findById(id).orElseThrow(); }

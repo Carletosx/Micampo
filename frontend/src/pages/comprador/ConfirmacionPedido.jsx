@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { FaShoppingCart, FaCreditCard, FaCheckCircle } from 'react-icons/fa';
-import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import ToastContainerCustom from '../../components/notifications/ToastContainer';
@@ -12,13 +11,19 @@ import ResumenCompra from '../../components/confirmacion/ResumenCompra';
 import InformacionEntrega from '../../components/confirmacion/InformacionEntrega';
 import EstadoPedido from '../../components/confirmacion/EstadoPedido';
 import AccionesPedido from '../../components/confirmacion/AccionesPedido';
+import { getOrder, getOrderTotals, getOrderItems } from '../../api/orders.js'
+import { listDirecciones, getDireccionById } from '../../api/users.js'
 
 const ConfirmacionPedido = () => {
-  const { cart, totalPrice } = useCart();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { showSuccess, showInfo } = useNotification();
+  const [sp] = useSearchParams()
+  const [pedido, setPedido] = useState(null)
+  const [totales, setTotales] = useState({ subtotal: 0, envio: 0, descuento: 0, total: 0 })
+  const [direccion, setDireccion] = useState({ calle: '—', ciudad: '—', distrito: '—', referencia: '' })
 
-  const orderId = useMemo(() => Math.floor(1000 + Math.random() * 9000), []);
+  const orderId = useMemo(() => sp.get('id') ? Number(sp.get('id')) : null, [sp]);
   const didShowRef = useRef();
 
   useEffect(() => {
@@ -27,32 +32,55 @@ const ConfirmacionPedido = () => {
     showSuccess('¡Tu pedido ha sido confirmado!');
   }, []);
 
-  const vendedor = { nombre: 'Finca Los Andes', ubicacion: 'Cusco, Perú' };
+  useEffect(() => {
+    const load = async () => {
+      if (!orderId) return
+      const r = await getOrder(orderId)
+      if (r.ok) setPedido(r.data)
+      const t = await getOrderTotals(orderId)
+      if (t.ok) setTotales(t.data)
+      const it = await getOrderItems(orderId)
+      if (it.ok) setPedido(prev => ({ ...(prev || {}), items: it.data }))
+      try {
+        const addrId = (pedido?.direccionEntregaId && String(pedido.direccionEntregaId)) || sessionStorage.getItem('lastAddressId')
+        if (addrId) {
+          const gd = await getDireccionById(addrId)
+          const found = gd.ok ? gd.data : null
+          if (found) {
+            setDireccion({
+              calle: [found.linea1, found.linea2].filter(Boolean).join(' '),
+              ciudad: found.provincia || found.departamento || '',
+              distrito: found.distrito || '',
+              referencia: found.referencia || ''
+            })
+          }
+        }
+      } catch {}
+    }
+    load()
+  }, [orderId])
 
-  const subtotal = totalPrice || 0;
-  const envio = 10;
-  const descuento = 0;
-  const total = subtotal + envio - descuento;
+  const vendedor = { nombre: 'AgroMarket', ubicacion: '—' };
+  const subtotal = totales.subtotal || 0;
+  const envio = totales.envio || 0;
+  const descuento = totales.descuento || 0;
+  const total = totales.total || 0;
 
-  const direccion = {
-    calle: 'Av. Los Álamos 123',
-    ciudad: 'Lima',
-    distrito: 'Miraflores',
-    referencia: 'Frente al parque central'
-  };
+  
 
   const contacto = {
-    nombre: user?.name || 'Cliente',
-    telefono: '999 555 444',
-    email: user?.email || 'cliente@example.com'
+    nombre: user?.displayName || 'Cliente',
+    telefono: '—',
+    email: user?.email || ''
   };
 
-  const metodoPago = 'Tarjeta de Crédito/Débito';
-  const fechaEstimada = 'Entrega en 2 días';
-  const estadoActual = 'Confirmado';
+  const metodoPago = pedido?.metodoPago || '—';
+  const fechaEstimada = '—';
+  const estadoActual = pedido?.estado || 'PENDIENTE';
 
   const handleTrack = () => {
-    showInfo('Funcionalidad de rastreo próximamente.');
+    if (orderId) navigate(`/comprador/pedidos/${orderId}`)
+    else showInfo('Sin ID de pedido');
   };
 
   const handleInvoice = () => {
@@ -83,11 +111,11 @@ const ConfirmacionPedido = () => {
       {/* Contenido principal */}
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* Mensaje principal */}
-        <MensajeExito orderId={orderId} email={contacto.email} />
+        <MensajeExito orderId={orderId || '—'} email={contacto.email} />
 
         {/* Detalles y resumen */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <DetallesPedido vendedor={vendedor} productos={cart} />
+          <DetallesPedido vendedor={vendedor} productos={(pedido?.items || []).map(it => ({ id: it.id, nombre: it.nombreProducto, quantity: it.cantidad, price: Number(it.precioUnitario || 0) }))} />
           <ResumenCompra subtotal={subtotal} envio={envio} descuento={descuento} total={total} />
         </div>
 

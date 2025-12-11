@@ -14,6 +14,12 @@ public class ServicioDirecciones {
 
   public List<Direccion> listar(Long authUsuarioId) { return repoDireccion.findByAuthUsuarioId(authUsuarioId); }
 
+  public Direccion obtener(Long authUsuarioId, Long id) {
+    Direccion d = repoDireccion.findById(id).orElseThrow();
+    if (!d.getAuthUsuarioId().equals(authUsuarioId)) throw new IllegalArgumentException("La dirección no pertenece al usuario");
+    return d;
+  }
+
   @Transactional
   public Direccion crear(Long authUsuarioId, Direccion d) {
     d.setAuthUsuarioId(authUsuarioId);

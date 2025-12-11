@@ -91,5 +91,40 @@ public class ServicioPagos {
 
   @Transactional
   public void eliminarMetodo(Long id) { repoMetodo.deleteById(id); }
-}
 
+  @Transactional
+  public Pago marcarAprobadoPorTransaccion(String transaccionId) {
+    Pago p = repoPago.findByTransaccionId(transaccionId).orElseThrow();
+    p.setEstado(EstadoPago.APROBADO);
+    repoPago.save(p);
+    try {
+      PagoAprobadoEvento ev = new PagoAprobadoEvento();
+      ev.setIdEvento(UUID.randomUUID().toString());
+      ev.setFecha(Instant.now());
+      ev.setClaveEnrutamiento(EventosConfig.RK_PAGO_APROBADO);
+      ev.setPedidoId(p.getPedidoId());
+      ev.setPagoId(p.getId());
+      ev.setMonto(p.getMonto().toPlainString());
+      rabbitTemplate.convertAndSend(intercambioPago.getName(), EventosConfig.RK_PAGO_APROBADO, ev);
+    } catch (Exception ignored) {}
+    return p;
+  }
+
+  @Transactional
+  public Pago marcarFallidoPorTransaccion(String transaccionId, String motivo) {
+    Pago p = repoPago.findByTransaccionId(transaccionId).orElseThrow();
+    p.setEstado(EstadoPago.FALLIDO);
+    repoPago.save(p);
+    try {
+      PagoFallidoEvento ev = new PagoFallidoEvento();
+      ev.setIdEvento(UUID.randomUUID().toString());
+      ev.setFecha(Instant.now());
+      ev.setClaveEnrutamiento(EventosConfig.RK_PAGO_FALLIDO);
+      ev.setPedidoId(p.getPedidoId());
+      ev.setPagoId(p.getId());
+      ev.setMotivo(motivo != null ? motivo : "stripe");
+      rabbitTemplate.convertAndSend(intercambioPago.getName(), EventosConfig.RK_PAGO_FALLIDO, ev);
+    } catch (Exception ignored) {}
+    return p;
+  }
+}

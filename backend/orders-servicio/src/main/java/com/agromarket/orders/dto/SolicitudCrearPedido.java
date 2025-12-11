@@ -8,6 +8,7 @@ import java.util.List; import java.math.BigDecimal;
 public class SolicitudCrearPedido {
   private Long usuarioAuthId;
   private Long agricultorAuthId;
+  private Long direccionEntregaId;
   @NotBlank
   private String metodoPago;
   @NotBlank
