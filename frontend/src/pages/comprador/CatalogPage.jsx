@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FaHeart, FaRegHeart, FaStar, FaRegStar, FaShoppingCart, FaCheck } from 'react-icons/fa';
 import { useCart } from '../../contexts/CartContext';
@@ -29,10 +29,20 @@ const ProductCard = ({ producto }) => {
   const [favoriteToast, setFavoriteToast] = useState(false);
   const [isAddedToFavorites, setIsAddedToFavorites] = useState(false);
   const stockBajo = (producto?.stockMin ?? 0) > 0 && (producto?.stock ?? 0) <= (producto?.stockMin ?? 0)
+  const imgRef = useRef(null);
   
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // trigger fly-to-cart animation
+    try {
+      const rect = imgRef.current?.getBoundingClientRect();
+      const src = (producto.imagenUrl && producto.imagenUrl.startsWith('/uploads/')) ? `${API_ORIGIN}${producto.imagenUrl}` : (producto.imagenUrl || PLACEHOLDER_IMG);
+      window.dispatchEvent(new CustomEvent('fly-to-cart', { detail: { src, rect } }));
+    } catch (err) {
+      // ignore
+    }
     
     // Crear objeto de producto para el carrito
     const productToAdd = {
@@ -94,6 +104,7 @@ const ProductCard = ({ producto }) => {
       <Link to={`/product/${producto.id}`} className="block">
         <div className="relative">
           <img 
+            ref={imgRef}
             src={(producto.imagenUrl && producto.imagenUrl.startsWith('/uploads/')) ? `${API_ORIGIN}${producto.imagenUrl}` : (producto.imagenUrl || PLACEHOLDER_IMG)} 
             alt={producto.nombre} 
             className="w-full h-48 object-cover"

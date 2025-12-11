@@ -48,7 +48,7 @@ const Navbar = () => {
             <Link to={ROUTES.FAVORITES} className="text-gray-700 hover:text-green-600">
               <FaHeart />
             </Link>
-            <Link to={ROUTES.CART} className="text-gray-700 hover:text-green-600">
+            <Link to={ROUTES.CART} id="cart-icon" className="text-gray-700 hover:text-green-600">
               <FaShoppingCart />
             </Link>
             {user ? (

@@ -1,5 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { AuthContext } from '../../context/AuthContext';
 import { NotificationContext } from '../../contexts/NotificationContext';
 import logoOrganic from '../../assets/images/organic-logo.svg';
@@ -71,78 +72,210 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-800 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-600 via-green-500 to-teal-600 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/5 rounded-full translate-x-1/2 translate-y-1/2"></div>
+
       <LoadingOverlay visible={loading} text={activeTab === 'comprador' ? 'Registrando comprador...' : 'Registrando vendedor...'} />
-      <div className="max-w-md w-full bg-white rounded-lg overflow-hidden">
-        <div className="p-8">
-          <div className="flex justify-center mb-6">
-            <img src={logoOrganic} alt="Organic Logo" className="h-12" />
-          </div>
-          
-          <h2 className="text-center text-2xl font-bold text-green-600 mb-2">
-            ¡Crear Una Cuenta!
-          </h2>
-          <p className="text-center text-sm text-gray-600 mb-6">
-            Registra Tu Cuenta Gratis
-          </p>
-          
-          {/* Tabs para seleccionar tipo de usuario */}
-          <div className="flex mb-6">
-            <button
-              type="button"
-              className={`flex-1 py-2 text-center ${activeTab === 'vendedor' ? 'bg-gray-200 text-gray-800' : 'bg-white text-gray-600'}`}
-              onClick={() => handleTabChange('vendedor')}
+      
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="max-w-md w-full relative z-10"
+      >
+        <motion.div
+          className="bg-white rounded-2xl shadow-2xl overflow-hidden backdrop-blur-lg bg-opacity-95"
+          whileHover={{ boxShadow: '0 20px 50px rgba(0,0,0,0.15)' }}
+        >
+          <motion.div
+            className="p-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
+            <motion.div
+              className="flex justify-center mb-6"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.3, duration: 0.5, type: 'spring' }}
             >
-              Vendedor
-            </button>
-            <button
-              type="button"
-              className={`flex-1 py-2 text-center ${activeTab === 'comprador' ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}
-              onClick={() => handleTabChange('comprador')}
+              <img src={logoOrganic} alt="Organic Logo" className="h-12 drop-shadow-lg" />
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
             >
-              Comprador
-            </button>
-          </div>
-          
-          <form onSubmit={handleSubmit}>
-            <Input id="nombre" name="nombre" label="Nombre" placeholder="Introduce Tu Nombre" value={formData.nombre} onChange={handleChange} disabled={loading} error={errors.nombre} className="mb-4" />
+              <h2 className="text-center text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent mb-2">
+                ¡Crear Una Cuenta!
+              </h2>
+              <p className="text-center text-sm text-gray-600 mb-6">
+                Únete a nuestra comunidad agrícola
+              </p>
+            </motion.div>
             
-            <Input id="email" name="email" label="Correo electrónico" type="email" placeholder="Introduce Tu Correo Electrónico" value={formData.email} onChange={handleChange} disabled={loading} error={errors.email} className="mb-4" />
+            {/* Tabs para seleccionar tipo de usuario */}
+            <motion.div
+              className="flex mb-6 bg-gray-100 rounded-lg p-1"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+            >
+              <motion.button
+                type="button"
+                onClick={() => handleTabChange('vendedor')}
+                className={`flex-1 py-2 px-4 rounded-md text-center font-medium transition ${
+                  activeTab === 'vendedor'
+                    ? 'bg-white text-emerald-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                🌱 Agricultor
+              </motion.button>
+              <motion.button
+                type="button"
+                onClick={() => handleTabChange('comprador')}
+                className={`flex-1 py-2 px-4 rounded-md text-center font-medium transition ${
+                  activeTab === 'comprador'
+                    ? 'bg-white text-emerald-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                🛒 Comprador
+              </motion.button>
+            </motion.div>
             
-            <Input id="password" name="password" label="Contraseña" type="password" placeholder="Ingresa Su Contraseña" value={formData.password} onChange={handleChange} disabled={loading} error={errors.password} className="mb-6" />
-            
-            <div className="mb-6">
-              <div className="flex items-center">
-                <input
-                  id="terms"
-                  name="terms"
-                  type="checkbox"
-                  required
-                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+            <motion.form
+              onSubmit={handleSubmit}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+            >
+              <motion.div
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.65, duration: 0.4 }}
+              >
+                <Input
+                  id="nombre"
+                  name="nombre"
+                  label="Nombre completo"
+                  placeholder="Introduce tu nombre"
+                  value={formData.nombre}
+                  onChange={handleChange}
+                  disabled={loading}
+                  error={errors.nombre}
+                  className="mb-4"
                 />
-                <label htmlFor="terms" className="ml-2 block text-sm text-gray-600">
-                  Estoy de acuerdo con el&nbsp;
-                  <a href="#" className="text-green-600 hover:underline">Términos y condiciones</a>.
-                </label>
-              </div>
-            </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.7, duration: 0.4 }}
+              >
+                <Input
+                  id="email"
+                  name="email"
+                  label="Correo electrónico"
+                  type="email"
+                  placeholder="tu@email.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  disabled={loading}
+                  error={errors.email}
+                  className="mb-4"
+                />
+              </motion.div>
+
+              <motion.div
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.75, duration: 0.4 }}
+              >
+                <Input
+                  id="password"
+                  name="password"
+                  label="Contraseña"
+                  type="password"
+                  placeholder="Contraseña segura (min. 6 caracteres)"
+                  value={formData.password}
+                  onChange={handleChange}
+                  disabled={loading}
+                  error={errors.password}
+                  className="mb-6"
+                />
+              </motion.div>
+              
+              <motion.div
+                className="mb-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8, duration: 0.4 }}
+              >
+                <div className="flex items-start">
+                  <input
+                    id="terms"
+                    name="terms"
+                    type="checkbox"
+                    required
+                    className="h-4 w-4 mt-1 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded cursor-pointer"
+                  />
+                  <label htmlFor="terms" className="ml-3 block text-sm text-gray-700">
+                    Estoy de acuerdo con los{' '}
+                    <a href="#" className="text-emerald-600 hover:underline font-medium">
+                      Términos y condiciones
+                    </a>
+                    .
+                  </label>
+                </div>
+              </motion.div>
+              
+              <motion.button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-emerald-600 to-green-600 text-white font-bold py-3 rounded-lg hover:shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {loading ? 'Registrando...' : `Crear Cuenta Como ${activeTab === 'comprador' ? 'Comprador' : 'Agricultor'}`}
+              </motion.button>
+            </motion.form>
             
-            <Button type="submit" loading={loading} className="w-full">{loading ? 'Registrando...' : 'CREAR UNA CUENTA COMO COMPRADOR'}</Button>
-          </form>
-          
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600">
-              ¿Ya Tienes Una Cuenta? <Link to="/auth/login" className="text-green-600 hover:underline">Acceso</Link>.
-            </p>
-          </div>
-          
-          <div className="mt-8 text-center">
-            <p className="text-xs text-gray-500">
-              © Copyright 2023 ProOrganic.
-            </p>
-          </div>
-        </div>
-      </div>
+            <motion.div
+              className="mt-4 text-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.85, duration: 0.5 }}
+            >
+              <p className="text-sm text-gray-600">
+                ¿Ya tienes una cuenta?{' '}
+                <Link to="/auth/login" className="text-emerald-600 hover:text-emerald-700 font-semibold">
+                  Inicia sesión
+                </Link>
+              </p>
+            </motion.div>
+            
+            <motion.div
+              className="mt-8 text-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.9, duration: 0.5 }}
+            >
+              <p className="text-xs text-gray-500">
+                © 2024 AgroMarket. Todos los derechos reservados.
+              </p>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import './App.css';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import FlyToCart from './components/ui/FlyToCart';
 
 // Layouts
 import Navbar from './components/layout/Navbar';
@@ -136,6 +137,7 @@ function App() {
   return (
     <>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover draggable theme="colored" style={{ zIndex: 9999 }} />
+      <FlyToCart />
       <Router>
         <AppBody />
       </Router>

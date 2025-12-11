@@ -5,8 +5,8 @@ services:
     image: rabbitmq:3-management
     container_name: rabbitmq-local
     ports:
-      - "5672:5672"   # AMQP
-      - "15672:15672" # Management UI
+      - "5673:5672"   # AMQP (host -> container)
+      - "15673:15672" # Management UI (host -> container)
     environment:
       RABBITMQ_DEFAULT_USER: agro
       RABBITMQ_DEFAULT_PASS: agro123
