@@ -19,10 +19,22 @@ CREATE TABLE IF NOT EXISTS usuarios_perfil (
   UNIQUE KEY uk_perfil_auth_usuario (auth_usuario_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Fincas (1:N por usuario)
-CREATE TABLE IF NOT EXISTS fincas (
+-- Agricultores (referenciados por usuarios de auth)
+CREATE TABLE IF NOT EXISTS agricultores (
   id BIGINT NOT NULL AUTO_INCREMENT,
   auth_usuario_id BIGINT NOT NULL,
+  nombre VARCHAR(160) NULL,
+  telefono VARCHAR(30) NULL,
+  calificacion DECIMAL(3,2) NULL,
+  ventas INT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_agricultor_auth_usuario (auth_usuario_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Fincas (1:N por agricultor)
+CREATE TABLE IF NOT EXISTS fincas (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  agricultor_id BIGINT NOT NULL,
   nombre VARCHAR(160) NULL,
   ubicacion VARCHAR(160) NULL,
   area_ha DECIMAL(8,2) NULL,
@@ -32,5 +44,5 @@ CREATE TABLE IF NOT EXISTS fincas (
   descripcion TEXT NULL,
   actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  KEY idx_fincas_usuario (auth_usuario_id)
+  KEY idx_fincas_usuario (agricultor_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import ROUTES from '../../routes/paths.js'
 import { getProductDetail, updateProductDetail, uploadProductVideo } from '../../api/productDetails.js'
 import { API_ORIGIN } from '../../api/config.js'
+import { listFincas } from '../../api/users.js'
 
 export default function ModalDetalleProducto({ isOpen, producto, onClose, onSaved, notify }) {
   const [form, setForm] = useState({ descripcionLarga: '', informacionAdicional: '', videoUrl: '' })
@@ -16,22 +17,49 @@ export default function ModalDetalleProducto({ isOpen, producto, onClose, onSave
   const [infoRows, setInfoRows] = useState(defaultRows)
   const [uploadingVideo, setUploadingVideo] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [fincaInfo, setFincaInfo] = useState({ nombre: '', ubicacion: '', descripcion: '' })
   const navigate = useNavigate()
 
   useEffect(() => {
     const load = async () => {
       if (!producto) return
-      const { ok, data } = await getProductDetail(producto.id)
+      const [{ ok, data }, fincasRes] = await Promise.all([
+        getProductDetail(producto.id),
+        listFincas(0, 1).catch(() => ({ ok: false, data: [] }))
+      ])
       if (ok && data) {
         setForm({ descripcionLarga: data.descripcionLarga || '', informacionAdicional: data.informacionAdicional || '', videoUrl: data.videoUrl || '' })
+        // Merge defaults with saved values to ensure fixed labels always appear
+        const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        const defaults = [...defaultRows]
+        let extras = []
         try {
           const parsed = data.informacionAdicional ? JSON.parse(data.informacionAdicional) : []
-          if (Array.isArray(parsed) && parsed.length) setInfoRows(parsed)
-          else setInfoRows(defaultRows)
-        } catch { setInfoRows(defaultRows) }
+          if (Array.isArray(parsed) && parsed.length) {
+            parsed.forEach((r) => {
+              const et = norm(r.etiqueta)
+              const matchIdx = defaults.findIndex(d => norm(d.etiqueta) === et)
+              if (matchIdx >= 0) {
+                defaults[matchIdx] = { ...defaults[matchIdx], valor: r.valor || '' }
+              } else {
+                // skip finca-specific labels
+                if (!(et === 'marca' || et === 'finca' || et === 'ubicacion' || et === 'ubicación' || et.includes('descripcion de la finca') || et.includes('descripción de la finca'))) {
+                  extras.push({ etiqueta: r.etiqueta || '', valor: r.valor || '' })
+                }
+              }
+            })
+          }
+        } catch {}
+        setInfoRows([...defaults, ...extras])
       } else {
         setInfoRows(defaultRows)
         setForm({ descripcionLarga: '', informacionAdicional: '', videoUrl: '' })
+      }
+      if (Array.isArray(fincasRes?.data) && fincasRes.data.length) {
+        const f = fincasRes.data[0]
+        setFincaInfo({ nombre: f.nombre || '', ubicacion: f.ubicacion || '', descripcion: f.descripcion || '' })
+      } else {
+        setFincaInfo({ nombre: '', ubicacion: '', descripcion: '' })
       }
     }
     load()
@@ -43,7 +71,11 @@ export default function ModalDetalleProducto({ isOpen, producto, onClose, onSave
 
   const handleSave = async () => {
     setSaving(true)
-    const payload = { ...form, informacionAdicional: JSON.stringify(infoRows) }
+    const filtered = infoRows.filter(r => {
+      const e = (r.etiqueta || '').toLowerCase()
+      return !(e === 'marca' || e === 'finca' || e === 'ubicación' || e === 'ubicacion' || e.includes('descripción de la finca') || e.includes('descripcion de la finca'))
+    })
+    const payload = { ...form, informacionAdicional: JSON.stringify(filtered) }
     const { ok, unauthorized } = await updateProductDetail(producto.id, payload)
     setSaving(false)
     if (unauthorized) { notify?.('Tu sesión expiró. Inicia sesión nuevamente.', 'error'); navigate(ROUTES.LOGIN); return }
@@ -137,6 +169,17 @@ export default function ModalDetalleProducto({ isOpen, producto, onClose, onSave
                   )}
                 </div>
               )}
+            </div>
+          </div>
+          <div className="bg-gray-50 p-3 rounded-md">
+            <h4 className="font-medium text-sm mb-2 text-green-700">Información del Agricultor</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="text-sm text-gray-700">Finca (Marca)</div>
+              <div className="text-sm text-gray-700">{fincaInfo.nombre || '—'}</div>
+              <div className="text-sm text-gray-700">Ubicación</div>
+              <div className="text-sm text-gray-700">{fincaInfo.ubicacion || '—'}</div>
+              <div className="text-sm text-gray-700">Descripción de la finca</div>
+              <div className="text-sm text-gray-700">{fincaInfo.descripcion || '—'}</div>
             </div>
           </div>
         </div>

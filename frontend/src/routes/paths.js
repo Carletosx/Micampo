@@ -12,6 +12,7 @@ export const ROUTES = {
   CART: '/cart',
   CHECKOUT: '/checkout',
   COMPRADOR_CONFIRMACION: '/comprador/confirmacion-pedido',
+  COMPRADOR_PEDIDO_DETALLE: '/comprador/pedidos/:id',
   COMPRADOR_ORDENES: '/comprador/ordenes',
   COMPRADOR_DIRECCIONES: '/comprador/direcciones',
   COMPRADOR_METODOS_PAGO: '/comprador/metodos-pago',
@@ -24,7 +25,8 @@ export const ROUTES = {
     PRODUCTOS: '/agricultor/productos',
     PEDIDOS: '/agricultor/pedidos',
     REPORTES: '/agricultor/reportes',
-    PERFIL: '/agricultor/perfil'
+    PERFIL: '/agricultor/perfil',
+    RESENAS: '/agricultor/resenas'
   }
 }
 

@@ -14,7 +14,7 @@ const BannerBienvenida = ({
           <p className="mt-1 text-green-100">{subtitulo}</p>
         </div>
         <Link
-          to="/agricultor/productos/nuevo"
+          to="/agricultor/productos"
           className="inline-flex items-center gap-2 px-4 py-2 bg-white text-green-700 rounded-md shadow hover:bg-green-50 transition"
           aria-label="Publicar nuevo producto"
         >

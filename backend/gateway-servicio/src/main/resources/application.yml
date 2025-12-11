@@ -47,11 +47,11 @@ spring:
           filters:
             - RewritePath=^/api/products(?<segment>/?.*), /productos${segment}
         - id: orders
-          uri: http://localhost:8084
+          uri: http://localhost:8089
           predicates:
             - Path=/api/orders/**
           filters:
-            - StripPrefix=2
+            - RewritePath=^/api/orders(?<segment>/?.*), /pedidos${segment}
         - id: payments
           uri: http://localhost:8085
           predicates:

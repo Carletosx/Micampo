@@ -73,9 +73,12 @@ const Navbar = () => {
                 <Button variant="dangerGhost" size="sm" className="w-full justify-start" onClick={logout}>Cerrar sesión</Button>
               </Dropdown>
             ) : (
-              <Link to={ROUTES.LOGIN} className="text-gray-700 hover:text-green-600">
-                <FaUser />
-              </Link>
+              <div className="flex items-center gap-3">
+                <Link to={ROUTES.LOGIN} className="text-gray-700 hover:text-green-600">
+                  <FaUser />
+                </Link>
+                <Link to={ROUTES.REGISTER} className="text-sm text-gray-700 hover:text-green-600">Registrarse</Link>
+              </div>
             )}
           </div>
         </div>

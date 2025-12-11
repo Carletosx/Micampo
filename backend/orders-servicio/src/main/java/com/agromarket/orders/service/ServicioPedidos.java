@@ -19,15 +19,17 @@ public class ServicioPedidos {
   private final RepositorioPedido repoPedido;
   private final RepositorioItemPedido repoItem;
   private final RepositorioHistorialEstado repoHist;
-  private final RabbitTemplate rabbitTemplate;
-  private final TopicExchange intercambioOrden;
+  @org.springframework.beans.factory.annotation.Autowired(required = false)
+  private RabbitTemplate rabbitTemplate;
+  @org.springframework.beans.factory.annotation.Autowired(required = false)
+  private TopicExchange intercambioOrden;
+  @org.springframework.beans.factory.annotation.Value("${eventos.habilitados:true}")
+  private boolean eventosHabilitados;
 
-  public ServicioPedidos(RepositorioPedido repoPedido, RepositorioItemPedido repoItem, RepositorioHistorialEstado repoHist, RabbitTemplate rabbitTemplate, TopicExchange intercambioOrden) {
+  public ServicioPedidos(RepositorioPedido repoPedido, RepositorioItemPedido repoItem, RepositorioHistorialEstado repoHist) {
     this.repoPedido = repoPedido;
     this.repoItem = repoItem;
     this.repoHist = repoHist;
-    this.rabbitTemplate = rabbitTemplate;
-    this.intercambioOrden = intercambioOrden;
   }
 
   public Page<Pedido> listar(Long usuarioAuthId, Long agricultorAuthId, String estado, Integer page, Integer size) {
@@ -53,7 +55,7 @@ public class ServicioPedidos {
       if (itv.getPrecioUnitario() == null || itv.getPrecioUnitario().compareTo(BigDecimal.ZERO) < 0) throw new IllegalArgumentException("precioUnitario inválido");
     }
     String numero = UUID.randomUUID().toString();
-    Pedido p = Pedido.builder().numero(numero).estado(EstadoPedido.PENDIENTE).metodoPago(req.getMetodoPago()).metodoEnvio(req.getMetodoEnvio()).usuarioAuthId(req.getUsuarioAuthId()).agricultorAuthId(req.getAgricultorAuthId()).subtotal(BigDecimal.ZERO).envio(BigDecimal.ZERO).descuento(BigDecimal.ZERO).total(BigDecimal.ZERO).creadoEn(Instant.now()).build();
+    Pedido p = Pedido.builder().numero(numero).estado(EstadoPedido.PENDIENTE).metodoPago(req.getMetodoPago()).metodoEnvio(req.getMetodoEnvio()).usuarioAuthId(req.getUsuarioAuthId()).agricultorAuthId(req.getAgricultorAuthId()).direccionEntregaId(req.getDireccionEntregaId()).subtotal(BigDecimal.ZERO).envio(BigDecimal.ZERO).descuento(BigDecimal.ZERO).total(BigDecimal.ZERO).creadoEn(Instant.now()).build();
     Pedido saved = repoPedido.save(p);
     BigDecimal subtotal = BigDecimal.ZERO;
     List<ItemPedido> items = new ArrayList<>();
@@ -71,18 +73,20 @@ public class ServicioPedidos {
     saved.setTotal(total);
     repoPedido.save(saved);
     repoHist.save(HistorialEstado.builder().pedidoId(saved.getId()).estado(EstadoPedido.PENDIENTE).timestamp(Instant.now()).build());
-    try {
-      PedidoCreadoEvento ev = new PedidoCreadoEvento();
-      ev.setPedidoId(saved.getId());
-      ev.setUsuarioAuthId(saved.getUsuarioAuthId());
-      List<PedidoCreadoEvento.Item> evItems = new ArrayList<>();
-      for (ItemPedido ip : items) { PedidoCreadoEvento.Item e = new PedidoCreadoEvento.Item(); e.productoId = ip.getProductoId(); e.cantidad = ip.getCantidad(); evItems.add(e); }
-      ev.setItems(evItems);
-      ev.setIdEvento(UUID.randomUUID().toString());
-      ev.setFecha(Instant.now());
-      ev.setClaveEnrutamiento(EventosConfig.RK_ORDER_CREATED);
-      rabbitTemplate.convertAndSend(intercambioOrden.getName(), EventosConfig.RK_ORDER_CREATED, ev);
-    } catch (Exception ignored) {}
+    if (eventosHabilitados && rabbitTemplate != null && intercambioOrden != null) {
+      try {
+        PedidoCreadoEvento ev = new PedidoCreadoEvento();
+        ev.setPedidoId(saved.getId());
+        ev.setUsuarioAuthId(saved.getUsuarioAuthId());
+        List<PedidoCreadoEvento.Item> evItems = new ArrayList<>();
+        for (ItemPedido ip : items) { PedidoCreadoEvento.Item e = new PedidoCreadoEvento.Item(); e.productoId = ip.getProductoId(); e.cantidad = ip.getCantidad(); evItems.add(e); }
+        ev.setItems(evItems);
+        ev.setIdEvento(UUID.randomUUID().toString());
+        ev.setFecha(Instant.now());
+        ev.setClaveEnrutamiento(EventosConfig.RK_ORDER_CREATED);
+        rabbitTemplate.convertAndSend(intercambioOrden.getName(), EventosConfig.RK_ORDER_CREATED, ev);
+      } catch (Exception ignored) {}
+    }
     return saved;
   }
 
@@ -112,6 +116,16 @@ public class ServicioPedidos {
     return map;
   }
 
+  public List<HistorialEstado> historial(Long pedidoId) {
+    List<HistorialEstado> list = repoHist.findByPedidoId(pedidoId);
+    list.sort(java.util.Comparator.comparing(HistorialEstado::getTimestamp));
+    return list;
+  }
+
+  public List<ItemPedido> items(Long pedidoId) {
+    return repoItem.findByPedidoId(pedidoId);
+  }
+
   @Transactional
   public Pedido cambiarEstado(Long pedidoId, String estado, String nota) {
     Pedido p = obtener(pedidoId);
@@ -124,23 +138,25 @@ public class ServicioPedidos {
     p.setEstado(nuevo);
     repoPedido.save(p);
     repoHist.save(HistorialEstado.builder().pedidoId(pedidoId).estado(nuevo).timestamp(Instant.now()).nota(nota).build());
-    try {
-      CambioEstadoEvento ev = new CambioEstadoEvento();
-      ev.setPedidoId(pedidoId);
-      ev.setEstado(nuevo.name());
-      ev.setIdEvento(UUID.randomUUID().toString());
-      ev.setFecha(Instant.now());
-      ev.setClaveEnrutamiento(EventosConfig.RK_ORDER_STATUS_CHANGED);
-      rabbitTemplate.convertAndSend(intercambioOrden.getName(), EventosConfig.RK_ORDER_STATUS_CHANGED, ev);
-      if (nuevo == EstadoPedido.CONFIRMADO) {
-        PedidoConfirmadoEvento cv = new PedidoConfirmadoEvento();
-        cv.setPedidoId(pedidoId);
-        cv.setIdEvento(UUID.randomUUID().toString());
-        cv.setFecha(Instant.now());
-        cv.setClaveEnrutamiento(EventosConfig.RK_ORDER_CONFIRMED);
-        rabbitTemplate.convertAndSend(intercambioOrden.getName(), EventosConfig.RK_ORDER_CONFIRMED, cv);
-      }
-    } catch (Exception ignored) {}
+    if (eventosHabilitados && rabbitTemplate != null && intercambioOrden != null) {
+      try {
+        CambioEstadoEvento ev = new CambioEstadoEvento();
+        ev.setPedidoId(pedidoId);
+        ev.setEstado(nuevo.name());
+        ev.setIdEvento(UUID.randomUUID().toString());
+        ev.setFecha(Instant.now());
+        ev.setClaveEnrutamiento(EventosConfig.RK_ORDER_STATUS_CHANGED);
+        rabbitTemplate.convertAndSend(intercambioOrden.getName(), EventosConfig.RK_ORDER_STATUS_CHANGED, ev);
+        if (nuevo == EstadoPedido.CONFIRMADO) {
+          PedidoConfirmadoEvento cv = new PedidoConfirmadoEvento();
+          cv.setPedidoId(pedidoId);
+          cv.setIdEvento(UUID.randomUUID().toString());
+          cv.setFecha(Instant.now());
+          cv.setClaveEnrutamiento(EventosConfig.RK_ORDER_CONFIRMED);
+          rabbitTemplate.convertAndSend(intercambioOrden.getName(), EventosConfig.RK_ORDER_CONFIRMED, cv);
+        }
+      } catch (Exception ignored) {}
+    }
     return p;
   }
 

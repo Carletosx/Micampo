@@ -31,6 +31,7 @@ export default function NavbarAgricultor({ nombre: nombreProp, rol: rolProp }) {
             <NavLink to="/agricultor/pedidos" className={({ isActive }) => linkClass(isActive)}>Pedidos</NavLink>
             <NavLink to="/agricultor/reportes" className={({ isActive }) => linkClass(isActive)}>Reportes</NavLink>
             <NavLink to="/agricultor/inventario" className={({ isActive }) => linkClass(isActive)}>Inventario</NavLink>
+            <NavLink to="/agricultor/resenas" className={({ isActive }) => linkClass(isActive)}>Reseñas</NavLink>
           </div>
 
           {/* Acciones/Perfil */}

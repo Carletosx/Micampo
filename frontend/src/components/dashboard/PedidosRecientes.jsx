@@ -24,8 +24,14 @@ const PedidoItem = ({ pedido }) => (
   </div>
 );
 
-const PedidosRecientes = () => {
-  const pedidos = [
+const PedidosRecientes = ({ items = null }) => {
+  const pedidos = items && Array.isArray(items) && items.length > 0 ? items.map(o => ({
+    numero: o.id,
+    tiempo: new Date(o.creadoEn || Date.now()).toLocaleString(),
+    productos: (Array.isArray(o.items)?o.items.length: (o._itemsCount||0)),
+    monto: `S/ ${Number(o.total || 0).toFixed(2)}`,
+    estado: (o.estado === 'ENTREGADO' ? 'Completado' : (o.estado === 'PENDIENTE' ? 'Pendiente' : 'En proceso'))
+  })) : [
     { numero: 1247, tiempo: 'hace 2 h', productos: 3, monto: 'S/ 55.00', estado: 'En proceso' },
     { numero: 1246, tiempo: 'hace 1 día', productos: 5, monto: 'S/ 120.50', estado: 'Pendiente' },
     { numero: 1241, tiempo: 'hace 3 días', productos: 2, monto: 'S/ 35.00', estado: 'Completado' },

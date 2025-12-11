@@ -4,6 +4,8 @@ import { FaHeart, FaRegHeart, FaStar, FaRegStar, FaShoppingCart, FaCheck } from 
 import { useCart } from '../../contexts/CartContext';
 import { useFavorites } from '../../contexts/FavoritesContext';
 import { listProducts } from '../../api/products.js';
+import { getTiendasPublic } from '../../api/users.js';
+import { listReviews } from '../../api/reviews.js';
 import { API_ORIGIN } from '../../api/config.js';
 
 const PLACEHOLDER_IMG = 'https://via.placeholder.com/300x200?text=Imagen+no+disponible';
@@ -22,7 +24,7 @@ const RatingStars = ({ rating }) => {
 };
 
 // Componente para tarjeta de producto
-const ProductCard = ({ producto }) => {
+const ProductCard = ({ producto, rating }) => {
   const { addToCart } = useCart();
   const { toggleFavorite, isFavorite } = useFavorites();
   const [showToast, setShowToast] = useState(false);
@@ -120,8 +122,8 @@ const ProductCard = ({ producto }) => {
           <h3 className="text-lg font-semibold text-gray-800">{producto.nombre}</h3>
           <p className="text-sm text-gray-600">{producto.categoria}</p>
           <div className="flex items-center mt-1">
-            <RatingStars rating={producto.calificacion} />
-            <span className="text-xs text-gray-500 ml-1">({producto.calificacion})</span>
+            <RatingStars rating={rating || 0} />
+            <span className="text-xs text-gray-500 ml-1">({rating || 0})</span>
           </div>
           <div className="flex justify-between items-center mt-3">
             <div>
@@ -156,64 +158,71 @@ const ProductCard = ({ producto }) => {
 
 const CatalogPage = () => {
   const [categoriaActual, setCategoriaActual] = useState('');
-  const [subcategoriaActual, setSubcategoriaActual] = useState('');
-  const [precioRango, setPrecioRango] = useState([0, 50]);
+  const [precioRango, setPrecioRango] = useState([0, 1000]);
   const [productosFiltrados, setProductosFiltrados] = useState([]);
   const [pageInfo, setPageInfo] = useState({ number: 0, size: 30, totalPages: 1 });
-  const [onlyAvailable, setOnlyAvailable] = useState(false)
+  const [minStars, setMinStars] = useState(0)
+  const [tiendas, setTiendas] = useState([])
+  const [tiendaAuthId, setTiendaAuthId] = useState(null)
+  const [ratingsMap, setRatingsMap] = useState({})
 
   const cargarPagina = async (page = 0) => {
-    const { ok, data, page: pInfo } = await listProducts({ page, size: pageInfo.size, maxPrecio: precioRango[1] });
+    const { ok, data, page: pInfo } = await listProducts({ page, size: pageInfo.size });
     if (ok && Array.isArray(data)) {
       const activos = data.filter((p) => p.activo);
       setProductosFiltrados(activos);
+      // cargar calificaciones promedio en segundo plano
+      const ids = activos.map(p => p.id)
+      const map = {}
+      await Promise.all(ids.map(async (id) => {
+        const r = await listReviews(id)
+        if (r.ok && Array.isArray(r.data)) {
+          const avg = r.data.length ? Math.round(r.data.reduce((s, it) => s + (it.calificacion || 0), 0) / r.data.length) : 0
+          map[id] = avg
+        } else map[id] = 0
+      }))
+      setRatingsMap(map)
       if (pInfo) setPageInfo(pInfo);
     }
   };
-  useEffect(() => { cargarPagina(0); }, [precioRango]);
+  useEffect(() => { cargarPagina(0); }, []);
 
-  const visibles = onlyAvailable ? productosFiltrados.filter((p) => {
-    const min = p.stockMin ?? 0
-    const st = p.stock ?? 0
-    return min > 0 ? st > min : st > 0
-  }) : productosFiltrados
+  useEffect(() => {
+    const loadTiendas = async () => {
+      const r = await getTiendasPublic()
+      if (r.ok && Array.isArray(r.data)) setTiendas(r.data)
+    }
+    loadTiendas()
+  }, [])
+
+  const visibles = productosFiltrados.filter((p) => {
+    const price = Number(p.precio || 0)
+    const okPrice = price >= precioRango[0] && price <= precioRango[1]
+    const okCat = !categoriaActual || (p.categoria || '').toLowerCase() === categoriaActual.toLowerCase()
+    const okStore = !tiendaAuthId || p.vendedorAuthId === tiendaAuthId
+    const rating = ratingsMap[p.id] || 0
+    const okRating = rating >= minStars
+    return okPrice && okCat && okStore && okRating
+  })
   
   // Categorías disponibles
-  const categorias = [
-    { id: 'plantas-medicinales', nombre: 'Plantas Aromáticas Y Medicinales', cantidad: 19 },
-    { id: 'hortalizas', nombre: 'Hortalizas y Verduras', cantidad: 24 },
-    { id: 'cereales', nombre: 'Cereales Y Granos', cantidad: 15 },
-    { id: 'frutas', nombre: 'Frutas', cantidad: 19 },
-    { id: 'legumbres', nombre: 'Legumbres', cantidad: 22 },
-    { id: 'semillas', nombre: 'Semillas Y Plantines', cantidad: 24 }
-  ];
+  const categorias = (() => {
+    const counts = {}
+    productosFiltrados.forEach(p => { const c = p.categoria || 'Sin categoría'; counts[c] = (counts[c] || 0) + 1 })
+    return Object.entries(counts).map(([nombre, cantidad]) => ({ id: nombre, nombre, cantidad }))
+  })()
 
   // Clasificación por estrellas
-  const clasificaciones = [
-    { estrellas: 5, cantidad: 50 },
-    { estrellas: 4, cantidad: 25 },
-    { estrellas: 3, cantidad: 15 },
-    { estrellas: 2, cantidad: 10 },
-    { estrellas: 1, cantidad: 5 }
-  ];
+  const clasificaciones = [5,4,3,2,1]
 
   // Etiquetas
-  const etiquetas = [
-    { id: 'nuevos', nombre: 'Nuevos Artículos', cantidad: 11 },
-    { id: 'oferta', nombre: 'Artículos En Oferta', cantidad: 10 },
-    { id: 'destacados', nombre: 'Elementos Destacados', cantidad: 19 },
-    { id: 'tendencias', nombre: 'Tendencias', cantidad: 20 },
-    { id: 'descuento', nombre: 'Artículos Con Descuento', cantidad: 31 }
-  ];
+  // Etiquetas eliminadas en fase piloto
 
   // Tiendas
-  const tiendas = [
-    { id: 'lindele', nombre: 'Lindele', cantidad: 10 },
-    { id: 'turkee', nombre: 'Turkee', cantidad: 15 },
-    { id: 'foodbox', nombre: 'Foodbox', cantidad: 19 },
-    { id: 'recettas', nombre: 'Recettas', cantidad: 20 },
-    { id: 'fabindia', nombre: 'Fabindia', cantidad: 25 }
-  ];
+  const tiendasConConteo = tiendas.map(t => {
+    const count = productosFiltrados.filter(p => p.vendedorAuthId === t.authUsuarioId).length
+    return { id: t.id, nombre: t.tiendaNombre || t.nombre || 'Tienda', cantidad: count, authUsuarioId: t.authUsuarioId }
+  })
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -245,84 +254,60 @@ const CatalogPage = () => {
               <h3 className="text-lg font-semibold mb-4 uppercase">Categoría</h3>
               <ul className="space-y-2">
                 {categorias.map((cat) => (
-                  <li key={cat.id} className="flex justify-between items-center">
-                    <span className="text-gray-700">{cat.nombre}</span>
+                  <li key={cat.id} className="flex justify-between items-center cursor-pointer" onClick={() => setCategoriaActual(cat.nombre)}>
+                    <span className={`text-gray-700 ${categoriaActual===cat.nombre?'font-semibold':''}`}>{cat.nombre}</span>
                     <span className="text-gray-500 text-sm">({cat.cantidad})</span>
                   </li>
                 ))}
+                <li className="flex justify-between items-center cursor-pointer" onClick={() => setCategoriaActual('')}>
+                  <span className="text-gray-700">Todas</span>
+                </li>
               </ul>
             </div>
 
             {/* Rango de precios */}
             <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
               <h3 className="text-lg font-semibold mb-4 uppercase">Gama de precios</h3>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-700">S/0 - S/50</span>
+              <div className="flex items-center gap-2 mb-2">
+                <input type="number" min="0" className="w-24 border rounded px-2 py-1" value={precioRango[0]} onChange={(e)=> setPrecioRango([parseInt(e.target.value||'0'), precioRango[1]])} />
+                <span className="text-gray-700">-</span>
+                <input type="number" min="0" className="w-24 border rounded px-2 py-1" value={precioRango[1]} onChange={(e)=> setPrecioRango([precioRango[0], parseInt(e.target.value||'0')])} />
               </div>
-              <input 
-                type="range" 
-                min="0" 
-                max="50" 
-                value={precioRango[1]} 
-                onChange={(e) => setPrecioRango([0, parseInt(e.target.value)])}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
             </div>
 
-            {/* Disponibilidad */}
-            <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-              <h3 className="text-lg font-semibold mb-4 uppercase">Disponibilidad</h3>
-              <label className="flex items-center gap-2 text-gray-700">
-                <input type="checkbox" checked={onlyAvailable} onChange={(e) => setOnlyAvailable(e.target.checked)} />
-                <span>Mostrar solo disponibles</span>
-              </label>
-            </div>
+            {/* Disponibilidad removida en fase piloto */}
 
             {/* Clasificación */}
             <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
               <h3 className="text-lg font-semibold mb-4 uppercase">Clasificación</h3>
               <ul className="space-y-2">
-                {clasificaciones.map((clas) => (
-                  <li key={clas.estrellas} className="flex justify-between items-center">
+                {clasificaciones.map((est) => (
+                  <li key={est} className="flex justify-between items-center cursor-pointer" onClick={()=> setMinStars(est)}>
                     <div className="flex">
                       {[...Array(5)].map((_, i) => (
-                        <span key={i}>
-                          {i < clas.estrellas ? 
-                            <FaStar className="text-yellow-400" /> : 
-                            <FaRegStar className="text-gray-300" />
-                          }
-                        </span>
+                        <span key={i}>{i < est ? <FaStar className="text-yellow-400" /> : <FaRegStar className="text-gray-300" />}</span>
                       ))}
                     </div>
-                    <span className="text-gray-500 text-sm">({clas.cantidad})</span>
+                    <span className={`text-xs ${minStars===est?'text-green-600':''}`}>mínimo</span>
                   </li>
                 ))}
+                <li className="text-gray-700 cursor-pointer" onClick={()=> setMinStars(0)}>Todas</li>
               </ul>
             </div>
 
-            {/* Etiquetas */}
-            <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-              <h3 className="text-lg font-semibold mb-4 uppercase">Etiquetas</h3>
-              <ul className="space-y-2">
-                {etiquetas.map((etiqueta) => (
-                  <li key={etiqueta.id} className="flex justify-between items-center">
-                    <span className="text-gray-700">{etiqueta.nombre}</span>
-                    <span className="text-gray-500 text-sm">({etiqueta.cantidad})</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {/* Etiquetas eliminadas */}
 
             {/* Tiendas */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <h3 className="text-lg font-semibold mb-4 uppercase">Tiendas</h3>
               <ul className="space-y-2">
-                {tiendas.map((tienda) => (
-                  <li key={tienda.id} className="flex justify-between items-center">
-                    <span className="text-gray-700">{tienda.nombre}</span>
+                {tiendasConConteo.map((tienda) => (
+                  <li key={tienda.authUsuarioId || tienda.id} className="flex justify-between items-center cursor-pointer" onClick={()=> setTiendaAuthId(tienda.authUsuarioId)}>
+                    <span className={`text-gray-700 ${tiendaAuthId===tienda.authUsuarioId?'font-semibold':''}`}>{tienda.nombre}</span>
                     <span className="text-gray-500 text-sm">({tienda.cantidad})</span>
                   </li>
                 ))}
+                <li className="text-gray-700 cursor-pointer" onClick={()=> setTiendaAuthId(null)}>Todas</li>
               </ul>
             </div>
           </div>
@@ -349,7 +334,7 @@ const CatalogPage = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {visibles.map((producto) => (
-                  <ProductCard key={producto.id} producto={producto} />
+                  <ProductCard key={producto.id} producto={producto} rating={ratingsMap[producto.id]} />
                 ))}
               </div>
             )}

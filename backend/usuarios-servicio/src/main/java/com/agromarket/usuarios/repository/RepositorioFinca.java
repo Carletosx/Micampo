@@ -6,5 +6,5 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface RepositorioFinca extends JpaRepository<Finca, Long> {
-  Page<Finca> findByAuthUsuarioId(Long authUsuarioId, Pageable pageable);
+  Page<Finca> findByAgricultorId(Long agricultorId, Pageable pageable);
 }

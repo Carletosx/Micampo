@@ -24,7 +24,7 @@ public class ControladorProductos {
   public ResponseEntity<Producto> obtener(@PathVariable Long id) { return ResponseEntity.ok(servicioProductos.obtener(id)); }
 
   @PostMapping
-  public ResponseEntity<Producto> crear(@Valid @RequestBody SolicitudCrearProducto req) { return ResponseEntity.ok(servicioProductos.crear(req)); }
+  public ResponseEntity<Producto> crear(@RequestHeader(value = "X-Auth-Id", required = false) Long authId, @Valid @RequestBody SolicitudCrearProducto req) { return ResponseEntity.ok(servicioProductos.crear(req, authId)); }
 
   @PutMapping("/{id}")
   public ResponseEntity<Producto> actualizar(@PathVariable Long id, @Valid @RequestBody SolicitudActualizarProducto req) { return ResponseEntity.ok(servicioProductos.actualizar(id, req)); }
@@ -37,4 +37,11 @@ public class ControladorProductos {
 
   @PatchMapping("/{id}/activar")
   public ResponseEntity<Producto> activar(@PathVariable Long id) { return ResponseEntity.ok(servicioProductos.activar(id)); }
+
+  @PatchMapping("/vendedor/assign-missing")
+  public ResponseEntity<java.util.Map<String, Object>> asignarVendedorFaltantes(@RequestHeader(value = "X-Auth-Id", required = false) Long authId) {
+    if (authId == null) return ResponseEntity.status(401).body(java.util.Map.of("error", "no_autorizado"));
+    int count = servicioProductos.asignarVendedorAFaltantes(authId);
+    return ResponseEntity.ok(java.util.Map.of("actualizados", count));
+  }
 }

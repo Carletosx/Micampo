@@ -1,9 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import { SkeletonCard } from '../../components/ui/Skeleton'
+import { listOrdersByUser } from '../../api/orders.js'
+import { AuthContext } from '../../context/AuthContext'
 
 const Ordenes = () => {
   const [loading, setLoading] = useState(true)
-  useEffect(() => { const t = setTimeout(() => setLoading(false), 600); return () => clearTimeout(t) }, [])
+  const [orders, setOrders] = useState([])
+  const { user } = useContext(AuthContext)
+  useEffect(() => { 
+    const load = async () => {
+      setLoading(true)
+      const r = await listOrdersByUser(user?.id || null)
+      if (r.ok) setOrders(r.data)
+      setLoading(false)
+    }
+    load()
+  }, [user?.id])
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-10">
@@ -20,15 +32,17 @@ const Ordenes = () => {
             </div>
           </div>
           <div className="divide-y">
-            <div className="p-5 grid grid-cols-5 items-center text-sm">
-              <div className="font-medium text-gray-800">#0001</div>
-              <div className="text-gray-600">2025-12-01</div>
-              <div className="text-green-700">Entregado</div>
-              <div className="text-gray-800">S/ 0.00</div>
-              <div>
-                <button className="px-3 py-1 rounded border text-gray-700 hover:bg-gray-50">Ver</button>
+            {orders.map(o => (
+              <div key={o.id} className="p-5 grid grid-cols-5 items-center text-sm">
+                <div className="font-medium text-gray-800">#{o.id}</div>
+                <div className="text-gray-600">{new Date(o.creadoEn || Date.now()).toLocaleDateString()}</div>
+                <div className="text-gray-700">{o.estado}</div>
+                <div className="text-gray-800">S/ {Number(o.total || 0).toFixed(2)}</div>
+                <div>
+                  <a href={`/comprador/pedidos/${o.id}`} className="px-3 py-1 rounded border text-gray-700 hover:bg-gray-50">Ver</a>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>)}
       </div>

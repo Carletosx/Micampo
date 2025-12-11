@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import NavbarAgricultor from '../../components/layout/NavbarAgricultor';
 import EncabezadoPerfil from '../../components/perfil/EncabezadoPerfil';
 import SidebarPerfil from '../../components/perfil/SidebarPerfil';
+import SeccionCuentaAuth from '../../components/perfil/SeccionCuentaAuth';
 import SeccionInformacionPersonal from '../../components/perfil/SeccionInformacionPersonal';
 import SeccionInformacionFinca from '../../components/perfil/SeccionInformacionFinca';
 import SeccionMetodosPago from '../../components/perfil/SeccionMetodosPago';
@@ -12,12 +13,14 @@ import ModalCambiarFoto from '../../components/perfil/ModalCambiarFoto';
 import ToastContainerCustom from '../../components/notifications/ToastContainer';
 import { useNotification } from '../../contexts/NotificationContext';
 import { AuthContext } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import API_BASE, { API_ORIGIN } from '../../api/config.js';
 import { updatePerfil } from '../../api/users.js';
 
 const PerfilConfiguracion = () => {
   const { showSuccess } = useNotification();
-  const { user, updateProfile } = useContext(AuthContext);
+  const { user, updateProfile, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('personal');
   const [photoModal, setPhotoModal] = useState(false);
   const [searchParams] = useSearchParams();
@@ -54,7 +57,10 @@ const PerfilConfiguracion = () => {
       <NavbarAgricultor nombre={nombre} rol={rolLegible} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <EncabezadoPerfil />
+        <div className="flex items-center justify-between mb-4">
+          <EncabezadoPerfil />
+          <button onClick={() => { logout(); navigate('/login'); }} className="px-3 py-2 rounded-md bg-red-600 text-white hover:bg-red-700">Cerrar sesión</button>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Sidebar */}
@@ -75,6 +81,7 @@ const PerfilConfiguracion = () => {
           <div className="lg:col-span-2 space-y-6">
             {activeTab === 'personal' && (
               <>
+                <SeccionCuentaAuth />
                 <SeccionInformacionPersonal />
                 <SeccionInformacionFinca />
               </>

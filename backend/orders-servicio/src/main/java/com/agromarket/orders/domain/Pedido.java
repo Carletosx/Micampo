@@ -21,6 +21,7 @@ public class Pedido {
   @Column(nullable = false)
   private Long usuarioAuthId;
   private Long agricultorAuthId;
+  private Long direccionEntregaId;
   @Column(nullable = false)
   private BigDecimal subtotal;
   @Column(nullable = false)
@@ -32,4 +33,3 @@ public class Pedido {
   @Column(nullable = false)
   private Instant creadoEn;
 }
-

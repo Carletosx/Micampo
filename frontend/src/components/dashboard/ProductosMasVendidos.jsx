@@ -1,12 +1,7 @@
 import React from 'react';
 
 const ProductoCard = ({ producto }) => (
-  <div className="bg-white rounded-lg shadow-sm p-4 flex items-center gap-4">
-    <img
-      src={producto.imagen}
-      alt={producto.nombre}
-      className="w-16 h-16 rounded-md object-cover"
-    />
+  <div className="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between">
     <div className="flex-1">
       <p className="font-semibold text-gray-800">{producto.nombre}</p>
       <p className="text-xs text-gray-500">{producto.ventas} ventas este mes</p>
@@ -16,10 +11,15 @@ const ProductoCard = ({ producto }) => (
       <p className="font-semibold text-gray-800">{producto.total}</p>
     </div>
   </div>
-);
+)
 
-const ProductosMasVendidos = () => {
-  const productos = [
+const ProductosMasVendidos = ({ items = null }) => {
+  const productos = items && Array.isArray(items) && items.length > 0 ? items.map(it => ({
+    nombre: it.name,
+    ventas: it.quantity,
+    total: it.revenue,
+    imagen: 'https://images.unsplash.com/photo-1542831371-d531d36971e6?auto=format&fit=crop&w=160&q=80'
+  })) : [
     {
       nombre: 'Papa Blanca Premium',
       ventas: 45,

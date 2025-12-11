@@ -92,6 +92,10 @@ public class ServicioAutenticacion {
     return servicioJwt.esValido(accessToken);
   }
 
+  public Usuario obtenerPorId(Long id) {
+    return repositorioUsuario.findById(id).orElse(null);
+  }
+
   @Transactional
   public Usuario actualizarPerfil(String correo, String nombre, String avatarUrl) {
     Usuario u = repositorioUsuario.findByCorreo(correo).orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));

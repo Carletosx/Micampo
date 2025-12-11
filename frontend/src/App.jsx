@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import './App.css';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -26,12 +26,14 @@ import MetodosPago from './pages/comprador/MetodosPago';
 import CuentaLayout from './pages/comprador/CuentaLayout';
 import PagoEnLinea from './pages/comprador/PagoEnLinea';
 import ConfirmacionPedido from './pages/comprador/ConfirmacionPedido';
+import PedidoDetalle from './pages/comprador/PedidoDetalle';
 import DashboardAgricultor from './pages/agricultor/DashboardAgricultor';
 import GestionInventario from './pages/agricultor/GestionInventario';
 import MisProductos from './pages/agricultor/MisProductos';
-import GestionPedidos from './pages/agricultor/GestionPedidos';
+import PedidosAgricultor from './pages/agricultor/Pedidos';
 import PerfilConfiguracion from './pages/agricultor/PerfilConfiguracion';
 import ReportesEstadisticas from './pages/agricultor/ReportesEstadisticas';
+import ResenasProductos from './pages/agricultor/ResenasProductos';
 
 // Context Providers
 import { CartProvider } from './contexts/CartContext';
@@ -77,6 +79,7 @@ const AppBody = () => {
                     <Route path={ROUTES.CART} element={<CartPage />} />
                     <Route path={ROUTES.CHECKOUT} element={<PagoEnLinea />} />
                     <Route path={ROUTES.COMPRADOR_CONFIRMACION} element={<ConfirmacionPedido />} />
+                    <Route path={ROUTES.COMPRADOR_PEDIDO_DETALLE} element={<PedidoDetalle />} />
 
                     {/* Dashboard comprador protegido */}
                     <Route
@@ -113,12 +116,14 @@ const AppBody = () => {
                     />
 
                     {/* Agricultor - rutas públicas */}
+                    <Route path="/agricultor" element={<Navigate to={ROUTES.AGRICULTOR.DASHBOARD} replace />} />
                     <Route path={ROUTES.AGRICULTOR.DASHBOARD} element={<DashboardAgricultor />} />
                     <Route path={ROUTES.AGRICULTOR.INVENTARIO} element={<GestionInventario />} />
                     <Route path={ROUTES.AGRICULTOR.PRODUCTOS} element={<MisProductos />} />
-                    <Route path={ROUTES.AGRICULTOR.PEDIDOS} element={<GestionPedidos />} />
+                    <Route path={ROUTES.AGRICULTOR.PEDIDOS} element={<PedidosAgricultor />} />
                     <Route path={ROUTES.AGRICULTOR.REPORTES} element={<ReportesEstadisticas />} />
                     <Route path={ROUTES.AGRICULTOR.PERFIL} element={<PerfilConfiguracion />} />
+                    <Route path={ROUTES.AGRICULTOR.RESENAS} element={<ResenasProductos />} />
                   </Routes>
                   </ErrorBoundary>
                 </main>
