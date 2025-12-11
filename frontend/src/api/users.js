@@ -78,6 +78,12 @@ export const getTiendasPublic = async () => {
   return { ok: res.ok, data }
 }
 
+export const getPerfilPublicByAuth = async (authUsuarioId) => {
+  const res = await fetch(`${API_BASE}/users/public/perfil/by-auth/${authUsuarioId}`, { headers: { Accept: 'application/json' } })
+  const data = await res.json().catch(() => null)
+  return { ok: res.ok, data }
+}
+
 const getAuthIdFromToken = () => {
   try {
     const t = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('accessToken') : null) || (typeof localStorage !== 'undefined' ? localStorage.getItem('accessToken') : null)
@@ -131,4 +137,4 @@ export const deleteDireccion = async (id) => {
   return { ok: res.ok, unauthorized: res.status === 401 }
 }
 
-export default { getPerfil, updatePerfil, listFincas, createFinca, updateFinca, deleteFinca, getFincasPublicByAuth, getTiendasPublic, listDirecciones, createDireccion, updateDireccion, deleteDireccion }
+export default { getPerfil, updatePerfil, listFincas, createFinca, updateFinca, deleteFinca, getFincasPublicByAuth, getTiendasPublic, getPerfilPublicByAuth, listDirecciones, createDireccion, updateDireccion, deleteDireccion }

@@ -54,7 +54,16 @@ export const listOrdersByAgricultor = async (agricultorAuthId, opts = {}) => {
   let data = await res.json().catch(() => null)
   if (res.status === 401 && (await tryRefresh())) { res = await fetch(`${API_BASE}/orders${qs}`, { headers: { Accept: 'application/json', ...authHeader() } }); data = await res.json().catch(() => null) }
   const items = data && data.content ? data.content : []
-  return { ok: res.ok, status: res.status, data: items }
+  const meta = data ? {
+    page: data.page,
+    size: data.size,
+    totalElements: data.totalElements,
+    totalPages: data.totalPages,
+    numberOfElements: data.numberOfElements,
+    first: data.first,
+    last: data.last
+  } : null
+  return { ok: res.ok, status: res.status, data: items, meta }
 }
 
 export const getOrder = async (id) => {
@@ -85,4 +94,18 @@ export const getOrderItems = async (id) => {
   return { ok: res.ok, status: res.status, data }
 }
 
-export default { createOrder, listOrdersByUser, listOrdersByAgricultor, getOrder, getOrderTotals, getOrderHistory, getOrderItems }
+export const updateOrderStatus = async (id, { estado, nota = null }) => {
+  const body = JSON.stringify(nota ? { estado, nota } : { estado })
+  let res = await fetch(`${API_BASE}/orders/${id}/estado`, { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authHeader() }, body })
+  let text = await res.text().catch(() => '')
+  let data = null
+  try { data = text ? JSON.parse(text) : null } catch (_) { data = { raw: text } }
+  if (res.status === 401 && (await tryRefresh())) {
+    res = await fetch(`${API_BASE}/orders/${id}/estado`, { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authHeader() }, body })
+    text = await res.text().catch(() => '')
+    try { data = text ? JSON.parse(text) : null } catch (_) { data = { raw: text } }
+  }
+  return { ok: res.ok, status: res.status, data }
+}
+
+export default { createOrder, listOrdersByUser, listOrdersByAgricultor, getOrder, getOrderTotals, getOrderHistory, getOrderItems, updateOrderStatus }
