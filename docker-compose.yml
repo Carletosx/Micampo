@@ -1,18 +1,134 @@
-version: "3.8"
-
+version: "3.9"
 services:
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq-local
-    ports:
-      - "5672:5672"   # AMQP
-      - "15672:15672" # Management UI
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
     environment:
-      RABBITMQ_DEFAULT_USER: agro
-      RABBITMQ_DEFAULT_PASS: agro123
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-agromarket}
+    ports:
+      - "3306:3306"
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - mysql_data:/var/lib/mysql
+
+  gateway-servicio:
+    build: ./backend/gateway-servicio
+    container_name: gateway-servicio
+    environment:
+      - AUTH_URI=http://autenticacion-servicio:8081
+      - USERS_URI=http://usuarios-servicio:8082
+      - PRODUCTS_URI=http://productos-servicio:8083
+      - ORDERS_URI=http://orders-servicio:8089
+      - PAYMENTS_URI=http://payments-servicio:8085
+      - INVENTORY_URI=http://inventory-servicio:8086
+      - NOTIFICATIONS_URI=http://notifications-servicio:8087
+      - JWT_SECRET=${JWT_SECRET:-dev-secret}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - autenticacion-servicio
+      - usuarios-servicio
+      - productos-servicio
+      - orders-servicio
+      - payments-servicio
+      - inventory-servicio
+      - notifications-servicio
+
+  autenticacion-servicio:
+    build: ./backend/autenticacion-servicio
+    container_name: autenticacion-servicio
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-agromarket}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=${MYSQL_USER:-root}
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
+      - JWT_SECRET=${JWT_SECRET:-dev-secret}
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mysql
+
+  usuarios-servicio:
+    build: ./backend/usuarios-servicio
+    container_name: usuarios-servicio
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-agromarket}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=${MYSQL_USER:-root}
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
+    ports:
+      - "8082:8082"
+    depends_on:
+      - mysql
+
+  productos-servicio:
+    build: ./backend/productos-servicio
+    container_name: productos-servicio
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-agromarket}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=${MYSQL_USER:-root}
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
+    ports:
+      - "8083:8083"
+    depends_on:
+      - mysql
+
+  orders-servicio:
+    build: ./backend/orders-servicio
+    container_name: orders-servicio
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-agromarket}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=${MYSQL_USER:-root}
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
+      - EVENTOS_HABILITADOS=${EVENTOS_HABILITADOS:-false}
+    ports:
+      - "8089:8089"
+    depends_on:
+      - mysql
+
+  payments-servicio:
+    build: ./backend/payments-servicio
+    container_name: payments-servicio
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-agromarket}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=${MYSQL_USER:-root}
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
+      - STRIPE_SECRET=${STRIPE_SECRET}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+    ports:
+      - "8085:8085"
+    depends_on:
+      - mysql
+
+  inventory-servicio:
+    build: ./backend/inventory-servicio
+    container_name: inventory-servicio
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-agromarket}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=${MYSQL_USER:-root}
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
+    ports:
+      - "8086:8086"
+    depends_on:
+      - mysql
+
+  notifications-servicio:
+    build: ./backend/notifications-servicio
+    container_name: notifications-servicio
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-agromarket}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=${MYSQL_USER:-root}
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
+    ports:
+      - "8087:8087"
+    depends_on:
+      - mysql
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - gateway-servicio
 
 volumes:
-  rabbitmq_data:
-
+  mysql_data:

@@ -29,43 +29,43 @@ spring:
             allowCredentials: true
       routes:
         - id: auth
-          uri: http://localhost:8081
+          uri: ${AUTH_URI:http://autenticacion-servicio:8081}
           predicates:
             - Path=/api/auth/**
           filters:
             - StripPrefix=2
         - id: users
-          uri: http://localhost:8082
+          uri: ${USERS_URI:http://usuarios-servicio:8082}
           predicates:
             - Path=/api/users/**
           filters:
             - StripPrefix=2
         - id: products
-          uri: http://localhost:8083
+          uri: ${PRODUCTS_URI:http://productos-servicio:8083}
           predicates:
             - Path=/api/products/**
           filters:
             - RewritePath=^/api/products(?<segment>/?.*), /productos${segment}
         - id: orders
-          uri: http://localhost:8089
+          uri: ${ORDERS_URI:http://orders-servicio:8089}
           predicates:
             - Path=/api/orders/**
           filters:
             - RewritePath=^/api/orders(?<segment>/?.*), /pedidos${segment}
         - id: payments
-          uri: http://localhost:8085
+          uri: ${PAYMENTS_URI:http://payments-servicio:8085}
           predicates:
             - Path=/api/payments/**
           filters:
             - StripPrefix=2
         - id: inventory
-          uri: http://localhost:8086
+          uri: ${INVENTORY_URI:http://inventory-servicio:8086}
           predicates:
             - Path=/api/inventario/**
           filters:
             - StripPrefix=2
         - id: notifications
-          uri: http://localhost:8087
+          uri: ${NOTIFICATIONS_URI:http://notifications-servicio:8087}
           predicates:
             - Path=/api/notifications/**
           filters:
