@@ -4,8 +4,10 @@ import com.agromarket.notifications.domain.TipoNotificacion;
 import com.agromarket.notifications.service.ServicioNotificaciones;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 @Component
+@ConditionalOnProperty(name = "eventos.habilitados", havingValue = "true")
 public class ConsumidorEventos {
   private final ServicioNotificaciones servicio;
   public ConsumidorEventos(ServicioNotificaciones servicio) { this.servicio = servicio; }
@@ -31,4 +33,3 @@ public class ConsumidorEventos {
   @RabbitListener(queues = "notifications.usuario.registrado.q")
   public void onUsuarioRegistrado(Object evento) { servicio.enviar(TipoNotificacion.INAPP, "todos", null, "Usuario registrado"); }
 }
-
